@@ -1,1473 +1,979 @@
-# adham_edu_app.py
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import os
 import json
+import math
 import random
-import sqlite3
-import time
-from datetime import datetime
-from typing import Dict, List, Any, Optional
+import base64
+from pathlib import Path
+from datetime import datetime, date
+from typing import Dict, List, Any, Tuple
 
+import pandas as pd
 import streamlit as st
 
 # =========================================================
-# إعدادات التطبيق
+# ADHAM EDUCATION FORTRESS V50 - WORLD CLASS EDITION
 # =========================================================
-APP_TITLE = "منصة أدهم التعليمية المتقدمة"
-DB_PATH = "adham_edu_app.db"
+
+APP_TITLE = "حصن أدهم التعليمي V50"
+APP_ICON = "🎓"
+DATA_DIR = Path("adham_fortress_data")
+DATA_FILE = DATA_DIR / "student_profile.json"
+SYLLABUS_DIR = Path("Syllabus")
 
 st.set_page_config(
     page_title=APP_TITLE,
-    page_icon="🎓",
+    page_icon=APP_ICON,
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# التنسيق الفاخر
+# Bootstrap
 # =========================================================
-def apply_luxury_style():
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
-
-        html, body, [class*="css"]  {
-            font-family: 'Cairo', sans-serif;
-        }
-
-        .stApp {
-            background:
-                radial-gradient(circle at top right, rgba(32, 81, 143, 0.25), transparent 28%),
-                radial-gradient(circle at top left, rgba(18, 55, 95, 0.35), transparent 25%),
-                linear-gradient(180deg, #07111f 0%, #0a1729 35%, #0c1d33 100%);
-            color: #eef5ff;
-        }
-
-        section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #08101b 0%, #0e2036 60%, #102947 100%);
-            border-left: 1px solid rgba(157, 188, 224, 0.15);
-        }
-
-        section[data-testid="stSidebar"] * {
-            color: #eef5ff !important;
-        }
-
-        .block-container {
-            padding-top: 1.2rem;
-            padding-bottom: 1.5rem;
-        }
-
-        .hero-box {
-            background: linear-gradient(135deg, rgba(10,26,46,0.95) 0%, rgba(16,45,78,0.95) 100%);
-            border: 1px solid rgba(120, 170, 230, 0.20);
-            border-radius: 28px;
-            padding: 30px;
-            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
-            margin-bottom: 18px;
-        }
-
-        .hero-title {
-            color: #ffffff;
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-
-        .hero-sub {
-            color: #c8dbf4;
-            font-size: 1rem;
-            line-height: 1.9;
-        }
-
-        .card {
-            background: linear-gradient(180deg, rgba(12,24,40,0.96) 0%, rgba(15,31,52,0.96) 100%);
-            border: 1px solid rgba(140, 180, 230, 0.16);
-            border-radius: 24px;
-            padding: 22px;
-            margin-bottom: 16px;
-            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
-        }
-
-        .mini-card {
-            background: linear-gradient(180deg, rgba(11,22,37,0.96) 0%, rgba(15,29,47,0.96) 100%);
-            border: 1px solid rgba(130, 171, 220, 0.14);
-            border-radius: 20px;
-            padding: 16px;
-            text-align: center;
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
-        }
-
-        .metric-title {
-            color: #9db8d8;
-            font-size: 0.95rem;
-            margin-bottom: 4px;
-        }
-
-        .metric-value {
-            color: #ffffff;
-            font-size: 1.8rem;
-            font-weight: 800;
-        }
-
-        .section-title {
-            color: #ffffff;
-            font-size: 1.25rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-        }
-
-        .subject-title {
-            color: #ffffff;
-            font-size: 1.45rem;
-            font-weight: 800;
-            margin-bottom: 12px;
-        }
-
-        .chapter-box {
-            background: rgba(13, 28, 46, 0.9);
-            border: 1px solid rgba(129, 166, 213, 0.14);
-            border-radius: 18px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-
-        .good-answer {
-            background: linear-gradient(180deg, rgba(8, 64, 35, 0.95) 0%, rgba(9, 88, 44, 0.95) 100%);
-            border: 1px solid rgba(95, 220, 145, 0.22);
-            color: #effff3;
-            border-radius: 18px;
-            padding: 16px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        .bad-answer {
-            background: linear-gradient(180deg, rgba(88, 21, 21, 0.95) 0%, rgba(112, 27, 27, 0.95) 100%);
-            border: 1px solid rgba(255, 140, 140, 0.22);
-            color: #fff2f2;
-            border-radius: 18px;
-            padding: 16px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        .exam-box {
-            background: linear-gradient(180deg, rgba(12, 24, 40, 0.96) 0%, rgba(18, 33, 53, 0.96) 100%);
-            border: 1px solid rgba(140, 180, 230, 0.14);
-            border-radius: 22px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-        }
-
-        .footer-note {
-            text-align: center;
-            color: #9db8d8;
-            padding: 18px 0 4px 0;
-            font-size: 0.9rem;
-        }
-
-        .stButton > button {
-            width: 100%;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #1a4f8c 0%, #2d6eb8 100%);
-            color: white;
-            border: 1px solid rgba(164, 199, 238, 0.25);
-            font-weight: 800;
-            padding: 0.65rem 1rem;
-        }
-
-        .stDownloadButton > button {
-            width: 100%;
-            border-radius: 14px;
-            font-weight: 800;
-        }
-
-        .stRadio label {
-            color: #eef5ff !important;
-        }
-
-        .stSelectbox label, .stMultiSelect label, .stTextInput label {
-            color: #eef5ff !important;
-        }
-
-        .stProgress > div > div > div > div {
-            background: linear-gradient(90deg, #2d6eb8 0%, #4a8dd8 100%);
-        }
-
-        .stAlert {
-            border-radius: 16px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-apply_luxury_style()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+SYLLABUS_DIR.mkdir(parents=True, exist_ok=True)
 
 # =========================================================
-# قاعدة البيانات
+# Theme / CSS
 # =========================================================
-def get_conn():
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
+def inject_css() -> None:
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
 
-def init_db():
-    conn = get_conn()
-    cur = conn.cursor()
+    html, body, [class*="st-"], .stMarkdown, .stText, .stSelectbox, .stButton, .stRadio, .stTabs {
+        font-family: 'Cairo', sans-serif !important;
+        direction: rtl;
+        text-align: right;
+    }
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS exam_scores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT,
-            score REAL,
-            total REAL,
-            percentage REAL,
-            exam_type TEXT,
-            created_at TEXT
-        )
-    """)
+    .stApp {
+        background:
+            radial-gradient(circle at top right, rgba(26,58,109,0.35), transparent 30%),
+            radial-gradient(circle at top left, rgba(255,215,0,0.08), transparent 25%),
+            linear-gradient(180deg, #07111d 0%, #0b1624 50%, #0d1828 100%);
+        color: #edf2f7;
+    }
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS wrong_answers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT,
-            question_text TEXT,
-            choices_json TEXT,
-            correct_answer TEXT,
-            explanation TEXT,
-            source_type TEXT,
-            created_at TEXT
-        )
-    """)
+    .main-shell {
+        background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 28px;
+        padding: 22px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px);
+        margin-bottom: 18px;
+    }
 
-    conn.commit()
-    conn.close()
+    .hero-box {
+        border-radius: 30px;
+        padding: 32px 28px;
+        background:
+            linear-gradient(135deg, rgba(11,27,49,0.92), rgba(15,30,56,0.88)),
+            linear-gradient(135deg, #0e2039, #0d1a2f);
+        border: 1px solid rgba(255,215,0,0.18);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+        margin-bottom: 22px;
+    }
 
-init_db()
+    .hero-title {
+        font-size: 2.2rem;
+        font-weight: 900;
+        color: #ffd54f;
+        margin-bottom: 8px;
+        text-align: center;
+        text-shadow: 0 2px 18px rgba(255, 215, 0, 0.15);
+    }
 
-def save_exam_score(subject: str, score: float, total: float, exam_type: str):
-    percentage = round((score / total) * 100, 2) if total else 0.0
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO exam_scores (subject, score, total, percentage, exam_type, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        subject, score, total, percentage, exam_type,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
-    conn.commit()
-    conn.close()
+    .hero-subtitle {
+        font-size: 1.02rem;
+        color: #dbe7ff;
+        text-align: center;
+        line-height: 1.9;
+    }
 
-def save_wrong_answer(subject: str, question_text: str, choices: List[str], correct_answer: str, explanation: str, source_type: str):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO wrong_answers (subject, question_text, choices_json, correct_answer, explanation, source_type, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        subject,
-        question_text,
-        json.dumps(choices, ensure_ascii=False),
-        correct_answer,
-        explanation,
-        source_type,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
-    conn.commit()
-    conn.close()
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #ffe082;
+        margin: 8px 0 14px 0;
+        padding-right: 10px;
+        border-right: 4px solid #ffd54f;
+    }
 
-def fetch_scores():
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT subject, score, total, percentage, exam_type, created_at
-        FROM exam_scores
-        ORDER BY id DESC
-    """)
-    rows = cur.fetchall()
-    conn.close()
-    return rows
+    .metric-card {
+        border-radius: 22px;
+        padding: 18px 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+        border: 1px solid rgba(255,255,255,0.08);
+        min-height: 128px;
+        box-shadow: 0 12px 35px rgba(0,0,0,0.22);
+    }
 
-def fetch_wrong_answers(subject: Optional[str] = None):
-    conn = get_conn()
-    cur = conn.cursor()
-    if subject:
-        cur.execute("""
-            SELECT id, subject, question_text, choices_json, correct_answer, explanation, source_type, created_at
-            FROM wrong_answers
-            WHERE subject = ?
-            ORDER BY id DESC
-        """, (subject,))
-    else:
-        cur.execute("""
-            SELECT id, subject, question_text, choices_json, correct_answer, explanation, source_type, created_at
-            FROM wrong_answers
-            ORDER BY id DESC
-        """)
-    rows = cur.fetchall()
-    conn.close()
-    return rows
+    .metric-label {
+        color: #b8c6db;
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
 
-def delete_wrong_answer(item_id: int):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM wrong_answers WHERE id = ?", (item_id,))
-    conn.commit()
-    conn.close()
+    .metric-value {
+        color: #ffffff;
+        font-size: 1.8rem;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .metric-note {
+        color: #9ed3ff;
+        font-size: 0.93rem;
+        font-weight: 600;
+    }
+
+    .glass-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 18px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.20);
+        margin-bottom: 14px;
+    }
+
+    .subject-tile {
+        background: linear-gradient(135deg, rgba(255,215,0,0.07), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,215,0,0.16);
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.20);
+        margin-bottom: 12px;
+    }
+
+    .subject-name {
+        color: #fff0b3;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .subject-meta {
+        color: #d7e6ff;
+        font-size: 0.92rem;
+        line-height: 1.8;
+    }
+
+    .result-success {
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.45);
+        color: #d9ffe7;
+        border-radius: 18px;
+        padding: 16px;
+        font-weight: 700;
+        margin-top: 12px;
+    }
+
+    .result-error {
+        background: rgba(239, 68, 68, 0.10);
+        border: 1px solid rgba(239, 68, 68, 0.40);
+        color: #ffe0e0;
+        border-radius: 18px;
+        padding: 16px;
+        font-weight: 700;
+        margin-top: 12px;
+    }
+
+    .info-chip {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255,215,0,0.11);
+        border: 1px solid rgba(255,215,0,0.18);
+        color: #ffe082;
+        font-size: 0.88rem;
+        font-weight: 700;
+        margin: 0 0 8px 8px;
+    }
+
+    .stButton > button {
+        width: 100%;
+        border-radius: 14px !important;
+        min-height: 46px;
+        font-weight: 800 !important;
+        border: 1px solid rgba(255,215,0,0.30) !important;
+        background: linear-gradient(135deg, #f4c430, #ffd54f) !important;
+        color: #111827 !important;
+        box-shadow: 0 8px 22px rgba(244,196,48,0.28);
+    }
+
+    .stDownloadButton > button {
+        width: 100%;
+        border-radius: 14px !important;
+        min-height: 46px;
+        font-weight: 800 !important;
+    }
+
+    .stSelectbox label, .stRadio label, .stTextInput label, .stTextArea label {
+        font-weight: 800 !important;
+        color: #f5f7fb !important;
+    }
+
+    div[data-testid="stMetric"] {
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .footer-note {
+        text-align: center;
+        color: #b7c9e3;
+        font-size: 0.9rem;
+        margin-top: 24px;
+        opacity: 0.9;
+    }
+
+    iframe {
+        border-radius: 20px !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        background: #fff;
+    }
+
+    .small-muted {
+        color: #b8c6db;
+        font-size: 0.9rem;
+        line-height: 1.8;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+inject_css()
 
 # =========================================================
-# المواد
+# Master Data
 # =========================================================
-SUBJECTS = [
-    "الرياضيات البحتة - التفاضل والتكامل",
-    "الرياضيات البحتة - الجبر والهندسة الفراغية",
-    "الرياضيات التطبيقية - الاستاتيكا",
-    "الرياضيات التطبيقية - الديناميكا",
-    "الفيزياء",
-    "الكيمياء",
-    "اللغة العربية",
-    "اللغة الإنجليزية",
-]
-
-# =========================================================
-# ملخصات المنهج الموسعة
-# =========================================================
-LESSON_SUMMARIES: Dict[str, Dict[str, Any]] = {
-    "الرياضيات البحتة - التفاضل والتكامل": {
-        "intro": "عرض شامل لأهم وحدات منهج الصف الثالث الثانوي في التفاضل والتكامل، مع التركيز على القوانين المركزية التي تتكرر في أسئلة الامتحان النهائي.",
-        "chapters": [
-            {
-                "title": "النهايات والاتصال",
-                "laws": [
-                    {"name": "نهاية مجموع دالتين", "latex": r"\lim_{x \to a}[f(x)+g(x)] = \lim_{x \to a} f(x) + \lim_{x \to a} g(x)"},
-                    {"name": "الاتصال عند نقطة", "latex": r"\lim_{x \to a} f(x) = f(a)"},
-                ],
-            },
-            {
-                "title": "التفاضل وقاعدة القوة",
-                "laws": [
-                    {"name": "قاعدة القوة", "latex": r"\frac{d}{dx}(x^n)=n x^{n-1}"},
-                    {"name": "مشتقة الثابت", "latex": r"\frac{d}{dx}(c)=0"},
-                    {"name": "مشتقة مجموع دالتين", "latex": r"\frac{d}{dx}(f(x)+g(x))=f'(x)+g'(x)"},
-                ],
-            },
-            {
-                "title": "مشتقات الدوال المثلثية والأسية",
-                "laws": [
-                    {"name": "مشتقة الجيب", "latex": r"\frac{d}{dx}(\sin x)=\cos x"},
-                    {"name": "مشتقة جيب التمام", "latex": r"\frac{d}{dx}(\cos x)=-\sin x"},
-                    {"name": "مشتقة الدالة الأسية", "latex": r"\frac{d}{dx}(e^x)=e^x"},
-                ],
-            },
-            {
-                "title": "التكامل غير المحدد",
-                "laws": [
-                    {"name": "تكامل القوة", "latex": r"\int x^n\,dx=\frac{x^{n+1}}{n+1}+C \quad (n\neq -1)"},
-                    {"name": "تكامل الثابت", "latex": r"\int c\,dx = cx + C"},
-                    {"name": "التكامل العكسي للتفاضل", "latex": r"\int f'(x)\,dx=f(x)+C"},
-                ],
-            },
-            {
-                "title": "التكامل بالتجزئة",
-                "laws": [
-                    {"name": "قاعدة التكامل بالتجزئة", "latex": r"\int u\,dv = uv - \int v\,du"},
-                    {"name": "اختيار u و dv", "latex": r"\text{اختر } u \text{ بحيث يسهل تفاضله، و } dv \text{ بحيث يسهل تكامله}"},
-                ],
-            },
-        ],
-    },
-    "الرياضيات البحتة - الجبر والهندسة الفراغية": {
-        "intro": "ملخص دقيق لأهم موضوعات الجبر والهندسة الفراغية، مع قوانين أساسية تساعد على حل أسئلة البرهان والتحليل والحساب.",
-        "chapters": [
-            {
-                "title": "المتطابقات والتحليل",
-                "laws": [
-                    {"name": "مربع مجموع حدين", "latex": r"(a+b)^2 = a^2 + 2ab + b^2"},
-                    {"name": "فرق مربعين", "latex": r"a^2-b^2=(a-b)(a+b)"},
-                    {"name": "مكعب مجموع حدين", "latex": r"(a+b)^3=a^3+3a^2b+3ab^2+b^3"},
-                ],
-            },
-            {
-                "title": "المصفوفات والمحددات",
-                "laws": [
-                    {"name": "ضرب المصفوفات", "latex": r"(AB)_{ij}=\sum_k a_{ik}b_{kj}"},
-                    {"name": "محدد مصفوفة 2×2", "latex": r"\begin{vmatrix} a & b \\ c & d \end{vmatrix}=ad-bc"},
-                ],
-            },
-            {
-                "title": "الأعداد المركبة",
-                "laws": [
-                    {"name": "الوحدة التخيلية", "latex": r"i^2=-1"},
-                    {"name": "مقياس العدد المركب", "latex": r"|z|=\sqrt{a^2+b^2} \quad \text{حيث } z=a+bi"},
-                ],
-            },
-            {
-                "title": "الهندسة التحليلية",
-                "laws": [
-                    {"name": "المسافة بين نقطتين", "latex": r"d=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}"},
-                    {"name": "ميل المستقيم", "latex": r"m=\frac{y_2-y_1}{x_2-x_1}"},
-                ],
-            },
-            {
-                "title": "الهندسة الفراغية",
-                "laws": [
-                    {"name": "علاقة المستقيم بالمستوى", "latex": r"\text{إذا كان المستقيم عموديًا على مستقيمين متقاطعين في مستوى، فهو عمودي على المستوى}"},
-                    {"name": "حجم المنشور", "latex": r"\text{الحجم} = \text{مساحة القاعدة} \times \text{الارتفاع}"},
-                ],
-            },
-        ],
-    },
-    "الرياضيات التطبيقية - الاستاتيكا": {
-        "intro": "مراجعة منهجية للاستاتيكا تشمل القوى والعزوم والاتزان ومركز الثقل، مع القواعد الأساسية المستخدمة في المسائل الوزارية.",
-        "chapters": [
-            {
-                "title": "القوى وتمثيلها",
-                "laws": [
-                    {"name": "مركبتا القوة", "latex": r"F_x = F\cos\theta \quad,\quad F_y = F\sin\theta"},
-                    {"name": "محصلة قوتين", "latex": r"R=\sqrt{F_1^2+F_2^2+2F_1F_2\cos\theta}"},
-                ],
-            },
-            {
-                "title": "الاتزان الانتقالي",
-                "laws": [
-                    {"name": "الاتزان الأفقي", "latex": r"\Sigma F_x = 0"},
-                    {"name": "الاتزان الرأسي", "latex": r"\Sigma F_y = 0"},
-                ],
-            },
-            {
-                "title": "العزوم",
-                "laws": [
-                    {"name": "عزم قوة حول نقطة", "latex": r"M = F \times d"},
-                    {"name": "اتزان العزوم", "latex": r"\Sigma M = 0"},
-                ],
-            },
-            {
-                "title": "مركز الثقل",
-                "laws": [
-                    {"name": "مركز ثقل جسم منتظم", "latex": r"\text{يقع عند نقطة تماثله الهندسي}"},
-                    {"name": "مركز ثقل عدة أوزان", "latex": r"\bar{x}=\frac{\Sigma Wx}{\Sigma W}"},
-                ],
-            },
-            {
-                "title": "نظرية لامي",
-                "laws": [
-                    {"name": "نظرية لامي", "latex": r"\frac{F_1}{\sin \alpha}=\frac{F_2}{\sin \beta}=\frac{F_3}{\sin \gamma}"},
-                ],
-            },
-        ],
-    },
-    "الرياضيات التطبيقية - الديناميكا": {
-        "intro": "ملخص شامل لأهم موضوعات الديناميكا: السرعة، العجلة، الحركة الخطية، المقذوفات، والحركة الدائرية.",
-        "chapters": [
-            {
-                "title": "الحركة في خط مستقيم",
-                "laws": [
-                    {"name": "السرعة", "latex": r"v=\frac{ds}{dt}"},
-                    {"name": "العجلة", "latex": r"a=\frac{dv}{dt}"},
-                ],
-            },
-            {
-                "title": "العجلة المنتظمة",
-                "laws": [
-                    {"name": "العلاقة الأولى", "latex": r"v=u+at"},
-                    {"name": "العلاقة الثانية", "latex": r"s=ut+\frac{1}{2}at^2"},
-                    {"name": "العلاقة الثالثة", "latex": r"v^2=u^2+2as"},
-                ],
-            },
-            {
-                "title": "الحركة الرأسية",
-                "laws": [
-                    {"name": "العجلة تحت تأثير الجاذبية", "latex": r"a=-g"},
-                    {"name": "الإزاحة الرأسية", "latex": r"s=ut-\frac{1}{2}gt^2"},
-                ],
-            },
-            {
-                "title": "المقذوفات",
-                "laws": [
-                    {"name": "المدى الأفقي", "latex": r"R=\frac{u^2\sin 2\theta}{g}"},
-                    {"name": "أقصى ارتفاع", "latex": r"H=\frac{u^2\sin^2\theta}{2g}"},
-                ],
-            },
-            {
-                "title": "الحركة الدائرية",
-                "laws": [
-                    {"name": "العجلة المركزية", "latex": r"a_c=\frac{v^2}{r}"},
-                    {"name": "القوة المركزية", "latex": r"F=\frac{mv^2}{r}"},
-                ],
-            },
-        ],
-    },
-    "الفيزياء": {
-        "intro": "تجميع منظم لأهم فصول الفيزياء في الصف الثالث الثانوي، مع قوانين أساسية تشمل الكهرباء الحديثة والدوائر والتيار والمجالات.",
-        "chapters": [
-            {
-                "title": "التيار الكهربي وقانون أوم",
-                "laws": [
-                    {"name": "قانون أوم", "latex": r"V = IR"},
-                    {"name": "القدرة الكهربية", "latex": r"P = VI"},
-                    {"name": "الطاقة الكهربية", "latex": r"W = VIt"},
-                ],
-            },
-            {
-                "title": "المقاومة والمقاومية",
-                "laws": [
-                    {"name": "المقاومة", "latex": r"R=\rho \frac{L}{A}"},
-                    {"name": "الموصلية", "latex": r"\sigma=\frac{1}{\rho}"},
-                ],
-            },
-            {
-                "title": "قوانين كيرشوف",
-                "laws": [
-                    {"name": "قانون العقدة", "latex": r"\Sigma I_{\text{داخل}} = \Sigma I_{\text{خارج}}"},
-                    {"name": "قانون الحلقة", "latex": r"\Sigma V = 0"},
-                ],
-            },
-            {
-                "title": "الحث الكهرومغناطيسي",
-                "laws": [
-                    {"name": "قانون فاراداي", "latex": r"\varepsilon = -\frac{d\Phi}{dt}"},
-                    {"name": "الفيض المغناطيسي", "latex": r"\Phi = BA\cos\theta"},
-                ],
-            },
-            {
-                "title": "الفيزياء الحديثة",
-                "laws": [
-                    {"name": "طاقة الفوتون", "latex": r"E = hf"},
-                    {"name": "معادلة أينشتاين الكهروضوئية", "latex": r"hf = \phi + \frac{1}{2}mv^2"},
-                ],
-            },
-        ],
-    },
-    "الكيمياء": {
-        "intro": "تجميع مهني لأهم أبواب الكيمياء في الصف الثالث الثانوي مع القوانين والعلاقات الكمية المتكررة في المسائل.",
-        "chapters": [
-            {
-                "title": "المول والحساب الكيميائي",
-                "laws": [
-                    {"name": "عدد المولات", "latex": r"n=\frac{m}{M}"},
-                    {"name": "عدد الجسيمات", "latex": r"N=nN_A"},
-                ],
-            },
-            {
-                "title": "الغازات",
-                "laws": [
-                    {"name": "قانون الغاز المثالي", "latex": r"PV=nRT"},
-                    {"name": "حجم مول واحد من الغاز", "latex": r"22.4 \text{ لتر عند الظروف القياسية}"},
-                ],
-            },
-            {
-                "title": "المحاليل والتركيز",
-                "laws": [
-                    {"name": "المولارية", "latex": r"M=\frac{n}{V}"},
-                    {"name": "النسبة المئوية الكتلية", "latex": r"\%\text{كتلية}=\frac{\text{كتلة المذاب}}{\text{كتلة المحلول}}\times 100"},
-                ],
-            },
-            {
-                "title": "الاتزان الكيميائي",
-                "laws": [
-                    {"name": "ثابت الاتزان", "latex": r"K_c=\frac{[C]^c[D]^d}{[A]^a[B]^b}"},
-                    {"name": "مبدأ لوشاتيليه", "latex": r"\text{إذا تغير أحد العوامل المؤثرة على الاتزان، يتحرك النظام لمقاومة هذا التغير}"},
-                ],
-            },
-            {
-                "title": "الأكسدة والاختزال",
-                "laws": [
-                    {"name": "الأكسدة", "latex": r"\text{فقد إلكترونات}"},
-                    {"name": "الاختزال", "latex": r"\text{اكتساب إلكترونات}"},
-                ],
-            },
-        ],
-    },
+SUBJECTS_DATA: Dict[str, Dict[str, Any]] = {
     "اللغة العربية": {
-        "intro": "عرض منظم لأهم محاور اللغة العربية في الصف الثالث الثانوي: النحو، البلاغة، النصوص، القراءة، والتعبير.",
-        "chapters": [
-            {
-                "title": "النحو",
-                "laws": [
-                    {"name": "إن وأخواتها", "latex": r"\text{تنصب المبتدأ وترفع الخبر}"},
-                    {"name": "كان وأخواتها", "latex": r"\text{ترفع المبتدأ وتنصب الخبر}"},
-                ],
-            },
-            {
-                "title": "البلاغة",
-                "laws": [
-                    {"name": "التشبيه", "latex": r"\text{مقارنة بين شيئين اشتركا في صفة}"},
-                    {"name": "الاستعارة", "latex": r"\text{تشبيه حذف أحد طرفيه}"},
-                ],
-            },
-            {
-                "title": "الأدب والنصوص",
-                "laws": [
-                    {"name": "مدرسة الإحياء", "latex": r"\text{العودة إلى التراث القديم في المعاني والأساليب}"},
-                    {"name": "مدرسة الديوان", "latex": r"\text{التركيز على التجربة الذاتية والوحدة العضوية}"},
-                ],
-            },
-            {
-                "title": "القراءة",
-                "laws": [
-                    {"name": "فهم الفكرة العامة", "latex": r"\text{حدد الفكرة المحورية قبل تحليل التفاصيل}"},
-                    {"name": "الاستنتاج", "latex": r"\text{استخرج المعنى الضمني من السياق لا من اللفظ المباشر فقط}"},
-                ],
-            },
-            {
-                "title": "التعبير",
-                "laws": [
-                    {"name": "مقدمة مترابطة", "latex": r"\text{ابدأ بفكرة ممهدة متصلة بالموضوع}"},
-                    {"name": "وحدة الموضوع", "latex": r"\text{لا تنتقل بين الأفكار إلا بترتيب منطقي}"},
-                ],
-            },
-        ],
+        "icon": "📜",
+        "description": "نحو، بلاغة، أدب، نصوص، قراءة، تعبير",
+        "difficulty": "متوسط",
+        "yt": "https://www.youtube.com/results?search_query=لغة+عربية+ثانوية+عامة+2026",
+        "topics": ["النحو", "البلاغة", "الأدب", "النصوص", "القراءة", "التعبير"]
     },
     "اللغة الإنجليزية": {
-        "intro": "مراجعة شاملة في القواعد والمفردات والقراءة والكتابة لطلاب الصف الثالث الثانوي.",
-        "chapters": [
-            {
-                "title": "الأزمنة",
-                "laws": [
-                    {"name": "المضارع التام", "latex": r"\text{S + have/has + P.P}"},
-                    {"name": "الماضي التام", "latex": r"\text{S + had + P.P}"},
-                ],
-            },
-            {
-                "title": "الجمل الشرطية",
-                "laws": [
-                    {"name": "الشرط الأول", "latex": r"\text{If + present simple, will + infinitive}"},
-                    {"name": "الشرط الثاني", "latex": r"\text{If + past simple, would + infinitive}"},
-                ],
-            },
-            {
-                "title": "المبني للمجهول",
-                "laws": [
-                    {"name": "التحويل للمجهول", "latex": r"\text{Object + be + P.P}"},
-                ],
-            },
-            {
-                "title": "الروابط والمفردات",
-                "laws": [
-                    {"name": "السبب والنتيجة", "latex": r"\text{because, since, therefore, so}"},
-                    {"name": "التضاد", "latex": r"\text{however, although, but}"},
-                ],
-            },
-            {
-                "title": "الكتابة والقطعة",
-                "laws": [
-                    {"name": "الجملة الموضوعية", "latex": r"\text{ابدأ الفقرة بجملة رئيسية واضحة}"},
-                    {"name": "التسلسل المنطقي", "latex": r"\text{رتب الأفكار من العام إلى الخاص}"},
-                ],
-            },
-        ],
+        "icon": "🌍",
+        "description": "Vocabulary, Grammar, Reading, Writing",
+        "difficulty": "متوسط",
+        "yt": "https://www.youtube.com/results?search_query=انجليزي+ثانوية+عامة+2026",
+        "topics": ["Grammar", "Vocabulary", "Reading", "Writing"]
     },
+    "الفيزياء": {
+        "icon": "⚡",
+        "description": "الكهربية، الحركة، الشغل والطاقة، الدوائر، الموجات",
+        "difficulty": "مرتفع",
+        "yt": "https://www.youtube.com/results?search_query=فيزياء+ثانوية+عامة+2026",
+        "topics": ["قوانين كيرشوف", "التيار الكهربي", "الحركة", "الشغل والطاقة", "الموجات"]
+    },
+    "الكيمياء": {
+        "icon": "🧪",
+        "description": "العضوية، الاتزان، الأحماض والقواعد، الكيمياء الكهربية",
+        "difficulty": "متوسط",
+        "yt": "https://www.youtube.com/results?search_query=كيمياء+ثانوية+عامة+2026",
+        "topics": ["الاتزان الكيميائي", "الأحماض والقواعد", "الكيمياء العضوية", "الخلايا الجلفانية"]
+    },
+    "الأحياء": {
+        "icon": "🧬",
+        "description": "الوراثة، الدعامة والحركة، التكاثر، الهرمونات",
+        "difficulty": "متوسط",
+        "yt": "https://www.youtube.com/results?search_query=احياء+ثانوية+عامة+2026",
+        "topics": ["الوراثة", "الهرمونات", "التكاثر", "الدعامة والحركة"]
+    },
+    "الرياضيات البحتة": {
+        "icon": "📐",
+        "description": "التفاضل، التكامل، الجبر، الهندسة التحليلية",
+        "difficulty": "مرتفع",
+        "yt": "https://www.youtube.com/results?search_query=رياضيات+بحتة+ثانوية+عامة+2026",
+        "topics": ["التكامل بالتجزئة", "النهايات", "المصفوفات", "الهندسة التحليلية"]
+    },
+    "الرياضيات التطبيقية": {
+        "icon": "⚙️",
+        "description": "الاستاتيكا، الديناميكا، العزوم، الاحتكاك",
+        "difficulty": "مرتفع",
+        "yt": "https://www.youtube.com/results?search_query=رياضيات+تطبيقية+ثانوية+عامة+2026",
+        "topics": ["العزوم في الاستاتيكا", "الاحتكاك", "الحركة الخطية", "المقذوفات"]
+    }
 }
 
-# =========================================================
-# بنك الأسئلة
-# =========================================================
 QUESTION_BANK: Dict[str, List[Dict[str, Any]]] = {
-    "الرياضيات البحتة - التفاضل والتكامل": [
-        {
-            "question": "إذا كانت الدالة \( د(x)=x^5 \)، فما قيمة مشتقتها \( د'(x) \)؟",
-            "options": {
-                "A": r"\(5x^4\)",
-                "B": r"\(x^4\)",
-                "C": r"\(5x\)",
-                "D": r"\(x^6\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"الدالة المعطاة هي \(x^5\).",
-                r"نطبق قاعدة القوة: \(\frac{d}{dx}(x^n)=n x^{n-1}\).",
-                r"إذن: \(\frac{d}{dx}(x^5)=5x^4\).",
-            ],
-        },
-        {
-            "question": "أوجد مشتقة \( 3x^4 - 2x^2 + 7 \).",
-            "options": {
-                "A": r"\(12x^3 - 4x\)",
-                "B": r"\(12x^3 - 2x\)",
-                "C": r"\(4x^3 - 2x\)",
-                "D": r"\(12x^4 - 4x\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"مشتقة \(3x^4\) تساوي \(12x^3\).",
-                r"مشتقة \(-2x^2\) تساوي \(-4x\).",
-                r"مشتقة الثابت \(7\) تساوي \(0\).",
-                r"إذن الناتج النهائي هو \(12x^3 - 4x\).",
-            ],
-        },
-        {
-            "question": "ما قيمة التكامل \( \int x^2 \, dx \) ؟",
-            "options": {
-                "A": r"\(\frac{x^3}{3}+C\)",
-                "B": r"\(x^3+C\)",
-                "C": r"\(\frac{x^2}{2}+C\)",
-                "D": r"\(2x+C\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"نستخدم قاعدة تكامل القوة: \(\int x^n dx = \frac{x^{n+1}}{n+1}+C\).",
-                r"عند \(n=2\) يصبح التكامل \(\frac{x^3}{3}+C\).",
-            ],
-        },
-        {
-            "question": "إذا كانت \( y=x^3+x^2-1 \)، فأوجد \( y'(2) \).",
-            "options": {
-                "A": "14",
-                "B": "16",
-                "C": "12",
-                "D": "10",
-            },
-            "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"نشتق أولًا: \(y'=3x^2+2x\).",
-                r"بالتعويض عن \(x=2\): \(3(2^2)+2(2)=12+4=16\).",
-            ],
-        },
-        {
-            "question": "أي من الآتي يمثل صيغة التكامل بالتجزئة؟",
-            "options": {
-                "A": r"\(\int u\,dv = uv - \int v\,du\)",
-                "B": r"\(\int u\,dv = uv + \int v\,du\)",
-                "C": r"\(\int u\,dv = du\,dv\)",
-                "D": r"\(\int u\,dv = \frac{u}{v}\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"قاعدة التكامل بالتجزئة الأساسية هي:",
-                r"\(\int u\,dv = uv - \int v\,du\).",
-            ],
-        },
-    ],
-    "الرياضيات التطبيقية - الاستاتيكا": [
-        {
-            "question": "في حالة الاتزان الأفقي لجسم، أي العلاقات الآتية صحيحة؟",
-            "options": {
-                "A": r"\(\Sigma F_x = 0\)",
-                "B": r"\(\Sigma F_y = 0\)",
-                "C": r"\(\Sigma M = 0\)",
-                "D": r"\(F = ma\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"الاتزان الأفقي يعني أن محصلة المركبات الأفقية للقوى تساوي صفرًا.",
-                r"إذن: \(\Sigma F_x = 0\).",
-            ],
-        },
-        {
-            "question": "إذا أثرت قوة مقدارها \(F\) على بعد عمودي \(d\) من نقطة الدوران، فإن العزم يساوي:",
-            "options": {
-                "A": r"\(M=F+d\)",
-                "B": r"\(M=F\times d\)",
-                "C": r"\(M=\frac{F}{d}\)",
-                "D": r"\(M=Fd^2\)",
-            },
-            "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"تعريف العزم حول نقطة هو حاصل ضرب مقدار القوة في ذراعها العمودي.",
-                r"إذن: \(M=F\times d\).",
-            ],
-        },
-        {
-            "question": "تتحقق نظرية لامي عندما يكون الجسم تحت تأثير:",
-            "options": {
-                "A": "قوتين فقط",
-                "B": "ثلاث قوى متلاقية في حالة اتزان",
-                "C": "أربع قوى متوازية",
-                "D": "قوة واحدة فقط",
-            },
-            "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"نظرية لامي تُستخدم عندما تؤثر ثلاث قوى متلاقية على جسم في حالة اتزان.",
-                r"وحينها: \(\frac{F_1}{\sin\alpha}=\frac{F_2}{\sin\beta}=\frac{F_3}{\sin\gamma}\).",
-            ],
-        },
-    ],
     "الفيزياء": [
         {
-            "question": "أي القوانين الآتية يمثل قانون أوم؟",
+            "question": "عند تطبيق قانون كيرشوف الثاني على دائرة كهربية، فإن مجموع فروق الجهد حول أي مسار مغلق يساوي:",
             "options": {
-                "A": r"\(V=IR\)",
-                "B": r"\(P=VI\)",
-                "C": r"\(F=ma\)",
-                "D": r"\(Q=It\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"قانون أوم يربط بين فرق الجهد والتيار والمقاومة.",
-                r"الصيغة الصحيحة هي: \(V=IR\).",
-            ],
-        },
-        {
-            "question": "ماذا ينص قانون كيرشوف للعقدة؟",
-            "options": {
-                "A": "مجموع فروق الجهد في دائرة مغلقة يساوي واحدًا",
-                "B": "مجموع التيارات الداخلة للعقدة يساوي مجموع التيارات الخارجة منها",
-                "C": "المقاومة تساوي الجهد على التيار فقط",
-                "D": "القدرة تساوي مربع التيار في المقاومة فقط",
+                "A": "فرق الجهد الكلي للمصدر فقط",
+                "B": "صفر",
+                "C": "شدة التيار الكلية",
+                "D": "المقاومة المكافئة"
             },
             "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"قانون كيرشوف الأول يطبق عند العقدة.",
-                r"وينص على أن مجموع التيارات الداخلة يساوي مجموع التيارات الخارجة.",
-                r"أي: \(\Sigma I_{\text{داخل}} = \Sigma I_{\text{خارج}}\).",
-            ],
+            "explanation": """
+قانون كيرشوف الثاني ينص على أن المجموع الجبري لفروق الجهد في أي مسار مغلق يساوي صفرًا.
+
+$$\\sum V = 0$$
+
+وذلك لأن الطاقة المكتسبة من المصادر تساوي الطاقة المفقودة عبر المقاومات والعناصر الأخرى.
+            """,
+            "topic": "قوانين كيرشوف",
+            "difficulty": "متوسط"
         },
         {
-            "question": "ما الصيغة الصحيحة لقانون فاراداي للحث الكهرومغناطيسي؟",
+            "question": "إذا كانت القدرة الكهربية لجهاز تساوي 220 واط ويعمل على فرق جهد 110 فولت، فإن شدة التيار المار فيه تساوي:",
             "options": {
-                "A": r"\(\varepsilon = IR\)",
-                "B": r"\(\varepsilon = -\frac{d\Phi}{dt}\)",
-                "C": r"\(\Phi = \frac{dI}{dt}\)",
-                "D": r"\(B = \mu I\)",
+                "A": "0.5 أمبير",
+                "B": "1 أمبير",
+                "C": "2 أمبير",
+                "D": "4 أمبير"
             },
-            "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"قانون فاراداي ينص على أن القوة الدافعة المستحثة تساوي المعدل الزمني السالب لتغير الفيض.",
-                r"إذن: \(\varepsilon = -\frac{d\Phi}{dt}\).",
-            ],
-        },
+            "correct": "C",
+            "explanation": """
+نستخدم العلاقة:
+
+$$P = V \\times I$$
+
+إذن:
+
+$$I = \\frac{P}{V} = \\frac{220}{110} = 2\\ \\text{أمبير}$$
+            """,
+            "topic": "القدرة الكهربية",
+            "difficulty": "سهل"
+        }
     ],
     "الكيمياء": [
         {
-            "question": "إذا كانت كتلة المادة \(18\) جم وكتلتها المولية \(18\) جم/مول، فإن عدد المولات يساوي:",
+            "question": "أي العبارات التالية تصف العامل الحفاز بدقة؟",
             "options": {
-                "A": "0.5 مول",
-                "B": "1 مول",
-                "C": "2 مول",
-                "D": "18 مول",
+                "A": "يزيد كمية النواتج النهائية",
+                "B": "يرفع حرارة التفاعل تلقائيًا",
+                "C": "يقلل طاقة التنشيط دون أن يستهلك",
+                "D": "يغير ثابت الاتزان"
+            },
+            "correct": "C",
+            "explanation": """
+العامل الحفاز يعمل على توفير مسار بديل للتفاعل بطاقة تنشيط أقل، ولذلك يزيد سرعة التفاعل دون أن يُستهلك.
+
+ولا يغير ثابت الاتزان، بل يؤثر فقط على سرعة الوصول إلى الاتزان.
+            """,
+            "topic": "سرعة التفاعل",
+            "difficulty": "سهل"
+        }
+    ],
+    "الرياضيات البحتة": [
+        {
+            "question": "إذا كان $$\\int x e^x \\, dx$$، فإن الطريقة الأنسب للحل هي:",
+            "options": {
+                "A": "التعويض",
+                "B": "التكامل بالتجزئة",
+                "C": "الكسور الجزئية",
+                "D": "التقريب العددي"
             },
             "correct": "B",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"نستخدم العلاقة: \(n=\frac{m}{M}\).",
-                r"بالتعويض: \(n=\frac{18}{18}=1\) مول.",
-            ],
-        },
+            "explanation": """
+عندما يكون التكامل ناتج ضرب دالتين إحداهما جبرية والأخرى أسية، فالطريقة المناسبة غالبًا هي التكامل بالتجزئة:
+
+$$\\int u \\, dv = uv - \\int v \\, du$$
+
+نختار:
+- $$u = x$$
+- $$dv = e^x dx$$
+            """,
+            "topic": "التكامل بالتجزئة",
+            "difficulty": "متوسط"
+        }
+    ],
+    "الرياضيات التطبيقية": [
         {
-            "question": "أي العلاقات الآتية تمثل قانون الغاز المثالي؟",
+            "question": "في الاستاتيكا، يُحسب العزم حول نقطة باستخدام:",
             "options": {
-                "A": r"\(PV=nRT\)",
-                "B": r"\(V=IR\)",
-                "C": r"\(K_c=[A][B]\)",
-                "D": r"\(n=M\times m\)",
+                "A": "القوة ÷ الذراع",
+                "B": "القوة × ذراعها",
+                "C": "الكتلة × السرعة",
+                "D": "الضغط × المساحة"
             },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"القانون العام للغازات المثالية هو:",
-                r"\(PV=nRT\).",
-            ],
-        },
-        {
-            "question": "المولارية تُحسب من العلاقة:",
-            "options": {
-                "A": r"\(M=\frac{n}{V}\)",
-                "B": r"\(M=\frac{m}{n}\)",
-                "C": r"\(M=nV\)",
-                "D": r"\(M=\frac{V}{n}\)",
-            },
-            "correct": "A",
-            "solution_title": "الحل خطوة بخطوة",
-            "solution_steps": [
-                r"المولارية هي عدد المولات لكل لتر من المحلول.",
-                r"إذن: \(M=\frac{n}{V}\).",
-            ],
-        },
+            "correct": "B",
+            "explanation": """
+العزم يساوي حاصل ضرب القوة في ذراع القوة العمودي:
+
+$$\\tau = F \\times d$$
+
+حيث:
+- $$F$$ القوة
+- $$d$$ ذراع القوة العمودي
+            """,
+            "topic": "العزوم",
+            "difficulty": "سهل"
+        }
     ],
     "اللغة العربية": [
         {
-            "question": "ما الأثر الإعرابي الصحيح لـ (إنَّ)؟",
+            "question": "الأسلوب البلاغي في قولنا: 'العلم نور' هو:",
             "options": {
-                "A": "ترفع المبتدأ وتنصب الخبر",
-                "B": "تنصب المبتدأ وترفع الخبر",
-                "C": "تجزم الفعل المضارع",
-                "D": "تنصب الفاعل",
-            },
-            "correct": "B",
-            "solution_title": "الشرح",
-            "solution_steps": [
-                r"\(\text{إنَّ وأخواتها تنصب المبتدأ ويسمى اسمها، وترفع الخبر ويسمى خبرها.}\)",
-            ],
-        },
-        {
-            "question": "أي التعبيرات الآتية يُعد استعارة؟",
-            "options": {
-                "A": "العلم نور",
-                "B": "الطالب كالأسد",
-                "C": "الشمس مثل الذهب",
-                "D": "الوقت كالسيف",
+                "A": "تشبيه بليغ",
+                "B": "كناية",
+                "C": "استعارة مكنية",
+                "D": "مجاز مرسل"
             },
             "correct": "A",
-            "solution_title": "الشرح",
-            "solution_steps": [
-                r"\(\text{في قولنا: العلم نور، شُبِّه العلم بالنور وحُذف المشبه به على صورة استعارة.}\)",
-            ],
-        },
+            "explanation": """
+'العلم نور' من التشبيه البليغ لأن:
+- المشبه: العلم
+- المشبه به: النور
+- حُذفت أداة التشبيه ووجه الشبه
+
+فبقي التركيب في صورة تشبيه بليغ.
+            """,
+            "topic": "البلاغة",
+            "difficulty": "متوسط"
+        }
     ],
     "اللغة الإنجليزية": [
         {
-            "question": "اختر الصيغة الصحيحة للمضارع التام:",
+            "question": "Choose the correct sentence:",
             "options": {
-                "A": "Subject + had + past participle",
-                "B": "Subject + have/has + past participle",
-                "C": "Subject + am/is/are + verb+ing",
-                "D": "Subject + will + infinitive",
+                "A": "He have finished his homework.",
+                "B": "He has finished his homework.",
+                "C": "He finishing his homework.",
+                "D": "He finish his homework."
             },
             "correct": "B",
-            "solution_title": "الشرح",
-            "solution_steps": [
-                r"\(\text{المضارع التام يتكون من: Subject + have/has + P.P}\)",
-            ],
-        },
-        {
-            "question": "ما البناء الصحيح للشرط الأول؟",
-            "options": {
-                "A": "If + present simple, will + infinitive",
-                "B": "If + past simple, would + infinitive",
-                "C": "If + had + P.P, would have + P.P",
-                "D": "If + present simple, present simple only",
-            },
-            "correct": "A",
-            "solution_title": "الشرح",
-            "solution_steps": [
-                r"\(\text{الشرط الأول: If + present simple, will + infinitive}\)",
-            ],
-        },
+            "explanation": """
+The correct present perfect structure is:
+
+**He has finished his homework.**
+
+Because:
+- Subject = He
+- Auxiliary = has
+- Past participle = finished
+            """,
+            "topic": "Grammar",
+            "difficulty": "سهل"
+        }
     ],
+    "الأحياء": [
+        {
+            "question": "الحمض النووي المسؤول عن نقل الشفرة الوراثية من النواة إلى الريبوسوم هو:",
+            "options": {
+                "A": "DNA",
+                "B": "rRNA",
+                "C": "mRNA",
+                "D": "tRNA"
+            },
+            "correct": "C",
+            "explanation": """
+الـ mRNA هو الحمض النووي الريبوزي الرسول، ووظيفته نقل الشفرة الوراثية من DNA داخل النواة إلى الريبوسومات ليتم تصنيع البروتين.
+            """,
+            "topic": "الوراثة",
+            "difficulty": "سهل"
+        }
+    ]
 }
 
-# دعم المواد الأخرى لو لم توجد أسئلة كافية
-for subject in SUBJECTS:
-    QUESTION_BANK.setdefault(subject, [])
+DAILY_TASKS = [
+    "حل 20 سؤالًا في المادة الأصعب لديك.",
+    "مراجعة قانون أو قاعدة رئيسية من درس الأمس.",
+    "قراءة ملخص واحد من مكتبة الـ PDF.",
+    "مشاهدة فيديو شرح مركز لمدة 30 دقيقة.",
+    "حل سؤالين مقاليين وكتابة خطوات الحل.",
+    "إعادة اختبار خاطئ من بنك الأسئلة وتحليل الخطأ."
+]
 
 # =========================================================
-# إنشاء نموذج امتحان من بنك الأسئلة
+# Persistence
 # =========================================================
-def build_mock_exam(subject: str) -> List[Dict[str, Any]]:
-    base = QUESTION_BANK.get(subject, [])
-    if not base:
-        return []
-    if len(base) <= 5:
-        return base
-    return random.sample(base, min(8, len(base)))
-
-# =========================================================
-# إدارة الحالة
-# =========================================================
-def ensure_state():
-    defaults = {
-        "selected_subject": SUBJECTS[0],
-        "exam_subject": SUBJECTS[0],
-        "exam_started": False,
-        "exam_submitted": False,
-        "exam_questions": [],
-        "exam_answers": {},
-        "exam_start_time": None,
-        "exam_duration_seconds": 3 * 60 * 60,
-        "saved_exam_once": False,
+def default_profile() -> Dict[str, Any]:
+    return {
+        "student_name": "أدهم",
+        "target_score": 95,
+        "theme_mode": "إمبراطوري ليلي",
+        "stats": {
+            "questions_answered": 0,
+            "correct_answers": 0,
+            "study_minutes": 0,
+            "pdf_views": 0,
+            "video_clicks": 0
+        },
+        "subject_progress": {subject: 0 for subject in SUBJECTS_DATA.keys()},
+        "exam_history": [],
+        "last_login": str(datetime.now())
     }
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
 
-ensure_state()
+def load_profile() -> Dict[str, Any]:
+    if DATA_FILE.exists():
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data
+        except Exception:
+            return default_profile()
+    return default_profile()
+
+def save_profile(data: Dict[str, Any]) -> None:
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+profile = load_profile()
 
 # =========================================================
-# أدوات مساعدة
+# Session State
 # =========================================================
-def metric_cards():
-    scores = fetch_scores()
-    wrongs = fetch_wrong_answers()
-    total_exams = len(scores)
-    avg = round(sum(x[3] for x in scores) / total_exams, 2) if total_exams else 0.0
-    best = max([x[3] for x in scores], default=0.0)
+if "current_question" not in st.session_state:
+    st.session_state.current_question = None
+
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
+
+if "selected_subject" not in st.session_state:
+    st.session_state.selected_subject = list(SUBJECTS_DATA.keys())[0]
+
+# =========================================================
+# Helpers
+# =========================================================
+def percent(part: int, whole: int) -> float:
+    if whole <= 0:
+        return 0.0
+    return round((part / whole) * 100, 1)
+
+def get_pdf_files() -> List[Path]:
+    return sorted([p for p in SYLLABUS_DIR.glob("*.pdf") if p.is_file()])
+
+def render_pdf(file_path: Path, height: int = 900) -> None:
+    try:
+        with open(file_path, "rb") as f:
+            encoded_pdf = base64.b64encode(f.read()).decode("utf-8")
+        iframe = f"""
+        <iframe
+            src="data:application/pdf;base64,{encoded_pdf}"
+            width="100%"
+            height="{height}"
+            type="application/pdf">
+        </iframe>
+        """
+        st.markdown(iframe, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"تعذر عرض الملف: {e}")
+
+def smart_study_status() -> str:
+    answered = profile["stats"]["questions_answered"]
+    correct = profile["stats"]["correct_answers"]
+    accuracy = percent(correct, answered)
+    if answered == 0:
+        return "بداية قوية"
+    if accuracy >= 85:
+        return "جاهزية ممتازة"
+    if accuracy >= 70:
+        return "أداء جيد جدًا"
+    if accuracy >= 50:
+        return "يحتاج رفع الدقة"
+    return "التركيز مطلوب"
+
+def next_daily_task() -> str:
+    today_index = date.today().day % len(DAILY_TASKS)
+    return DAILY_TASKS[today_index]
+
+def get_random_question(subject: str) -> Dict[str, Any] | None:
+    questions = QUESTION_BANK.get(subject, [])
+    if not questions:
+        return None
+    return random.choice(questions)
+
+def record_answer(subject: str, is_correct: bool, topic: str, difficulty: str) -> None:
+    profile["stats"]["questions_answered"] += 1
+    if is_correct:
+        profile["stats"]["correct_answers"] += 1
+
+    # رفع تقدّم المادة تدريجيًا
+    old_progress = profile["subject_progress"].get(subject, 0)
+    increment = 5 if is_correct else 2
+    profile["subject_progress"][subject] = min(100, old_progress + increment)
+
+    profile["exam_history"].append({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "subject": subject,
+        "topic": topic,
+        "difficulty": difficulty,
+        "correct": is_correct
+    })
+
+    save_profile(profile)
+
+def render_metric_card(label: str, value: str, note: str) -> None:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+        <div class="metric-note">{note}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def chart_dataframe() -> pd.DataFrame:
+    history = profile.get("exam_history", [])
+    if not history:
+        return pd.DataFrame(columns=["المادة", "الإجابات", "الصحيحة"])
+    df = pd.DataFrame(history)
+    grouped = (
+        df.groupby("subject")["correct"]
+        .agg(["count", "sum"])
+        .reset_index()
+        .rename(columns={"subject": "المادة", "count": "الإجابات", "sum": "الصحيحة"})
+    )
+    return grouped
+
+def performance_message() -> str:
+    total = profile["stats"]["questions_answered"]
+    correct = profile["stats"]["correct_answers"]
+    acc = percent(correct, total)
+    if total == 0:
+        return "ابدأ أول اختبار الآن لتظهر مؤشرات الأداء والتحليل."
+    if acc >= 85:
+        return "مستوى متميز جدًا، استمر في المحافظة على نفس النسق."
+    if acc >= 70:
+        return "مستواك قوي، لكن ما زال هناك هامش لتحسين الدقة والسرعة."
+    if acc >= 50:
+        return "هناك أساس جيد، لكن تحتاج إلى مراجعة الأخطاء المتكررة."
+    return "ابدأ بخطة إنقاذ سريعة: مراجعة الأساسيات ثم اختبار قصير يومي."
+
+# =========================================================
+# Sidebar
+# =========================================================
+with st.sidebar:
+    st.markdown("## 🎛️ غرفة التحكم التنفيذية")
+    page = st.radio(
+        "اختر الواجهة:",
+        [
+            "🏠 الرئيسية",
+            "📚 المكتبة الرقمية",
+            "🧠 بنك الأسئلة الذكي",
+            "📺 أكاديمية الفيديو",
+            "📈 التحليلات والأداء",
+            "🗓️ الخطة اليومية",
+            "⚙️ الإعدادات"
+        ]
+    )
+
+    st.markdown("---")
+    st.markdown(f"**الطالب:** {profile['student_name']}")
+    st.markdown(f"**الحالة:** {smart_study_status()}")
+    st.markdown(f"**الهدف:** {profile['target_score']}%")
+    st.markdown("---")
+    st.info("💡 نصيحة النخبة: لا تكرر المعلومة فقط، بل اختبر نفسك عليها.")
+    st.caption("📁 ضع ملفات PDF داخل مجلد Syllabus لتظهر تلقائيًا في المكتبة.")
+
+# =========================================================
+# Header
+# =========================================================
+st.markdown("""
+<div class="hero-box">
+    <div class="hero-title">🏛️ حصن أدهم التعليمي — منصة النخبة 2026</div>
+    <div class="hero-subtitle">
+        منصة تعليمية عربية احترافية مصممة لتجربة ثانوية عامة من الطراز الرفيع:
+        مكتبة ذكية، اختبارات تفاعلية، تحليل أداء، متابعة يومية، وتجربة بصرية فاخرة.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# Pages
+# =========================================================
+if page == "🏠 الرئيسية":
+    st.markdown('<div class="section-title">لوحة القيادة الرئيسية</div>', unsafe_allow_html=True)
+
+    total_questions = profile["stats"]["questions_answered"]
+    correct_answers = profile["stats"]["correct_answers"]
+    accuracy = percent(correct_answers, total_questions)
+    pdf_views = profile["stats"]["pdf_views"]
+    video_clicks = profile["stats"]["video_clicks"]
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        render_metric_card("إجمالي الأسئلة", str(total_questions), "تم حلها داخل المنصة")
+    with c2:
+        render_metric_card("نسبة الدقة", f"{accuracy}%", "معدل الإجابات الصحيحة")
+    with c3:
+        render_metric_card("مرات فتح ملفات PDF", str(pdf_views), "تفاعل مع المكتبة الرقمية")
+    with c4:
+        render_metric_card("ضغطات الفيديو", str(video_clicks), "متابعة المحتوى المرئي")
+
+    st.markdown('<div class="section-title">المواد الدراسية</div>', unsafe_allow_html=True)
+    cols = st.columns(2)
+    subjects = list(SUBJECTS_DATA.items())
+
+    for idx, (subject, info) in enumerate(subjects):
+        with cols[idx % 2]:
+            progress = profile["subject_progress"].get(subject, 0)
+            st.markdown(f"""
+            <div class="subject-tile">
+                <div class="subject-name">{info['icon']} {subject}</div>
+                <div class="subject-meta">
+                    الوصف: {info['description']}<br>
+                    مستوى الصعوبة: {info['difficulty']}<br>
+                    التقدم الحالي: {progress}%
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.progress(progress / 100)
+
+    st.markdown('<div class="section-title">المهمة اليومية المقترحة</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-card">
+        <span class="info-chip">خطة اليوم</span>
+        <div class="small-muted">{next_daily_task()}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+elif page == "📚 المكتبة الرقمية":
+    st.markdown('<div class="section-title">المكتبة الرقمية للكتب والمراجعات</div>', unsafe_allow_html=True)
+
+    pdf_files = get_pdf_files()
+
+    if not pdf_files:
+        st.warning("لا توجد ملفات PDF داخل مجلد Syllabus حالياً. أضف ملفاتك وسيتم اكتشافها تلقائيًا.")
+    else:
+        file_names = [f.name for f in pdf_files]
+        selected_name = st.selectbox("اختر الملف الذي تريد فتحه:", file_names)
+        selected_path = next(p for p in pdf_files if p.name == selected_name)
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            with open(selected_path, "rb") as f:
+                st.download_button(
+                    "📥 تحميل الملف",
+                    data=f,
+                    file_name=selected_path.name,
+                    mime="application/pdf"
+                )
+        with c2:
+            if st.button("📖 تسجيل فتح الملف"):
+                profile["stats"]["pdf_views"] += 1
+                save_profile(profile)
+                st.success("تم تسجيل التفاعل مع الملف.")
+
+        st.markdown(f"""
+        <div class="glass-card">
+            <div class="subject-name">📘 {selected_path.name}</div>
+            <div class="small-muted">
+                الحجم التقريبي: {round(selected_path.stat().st_size / 1024, 2)} كيلوبايت
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        render_pdf(selected_path, height=950)
+
+elif page == "🧠 بنك الأسئلة الذكي":
+    st.markdown('<div class="section-title">بنك الأسئلة الذكي</div>', unsafe_allow_html=True)
+
+    subject = st.selectbox("اختر المادة:", list(SUBJECTS_DATA.keys()), key="subject_select")
+    st.session_state.selected_subject = subject
+
+    col_a, col_b = st.columns([1, 1])
+    with col_a:
+        if st.button("🎯 توليد سؤال جديد"):
+            question_data = get_random_question(subject)
+            if question_data:
+                st.session_state.current_question = question_data
+                st.session_state.last_result = None
+            else:
+                st.warning("لا توجد أسئلة متاحة حالياً لهذه المادة.")
+
+    with col_b:
+        st.markdown(f"""
+        <div class="glass-card">
+            <span class="info-chip">المادة الحالية</span>
+            <span class="info-chip">الموضوعات: {len(SUBJECTS_DATA[subject]['topics'])}</span>
+            <span class="info-chip">الصعوبة: {SUBJECTS_DATA[subject]['difficulty']}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    q = st.session_state.current_question
+    if q:
+        st.markdown(f"""
+        <div class="glass-card">
+            <div class="subject-name">🧩 السؤال</div>
+            <div class="small-muted" style="font-size:1rem;color:#f5f7fb;margin-top:10px;">
+                {q['question']}
+            </div>
+            <div class="small-muted" style="margin-top:10px;">
+                الموضوع: {q['topic']} | المستوى: {q['difficulty']}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        options_map = q["options"]
+        radio_labels = [f"{key}) {value}" for key, value in options_map.items()]
+        selected_option = st.radio("اختر الإجابة:", radio_labels, key="answer_radio")
+
+        if st.button("✅ تأكيد الإجابة"):
+            selected_key = selected_option.split(")")[0].strip()
+            is_correct = selected_key == q["correct"]
+            st.session_state.last_result = {
+                "is_correct": is_correct,
+                "correct_key": q["correct"],
+                "explanation": q["explanation"]
+            }
+            record_answer(subject, is_correct, q["topic"], q["difficulty"])
+
+    if st.session_state.last_result:
+        result = st.session_state.last_result
+        if result["is_correct"]:
+            st.markdown("""
+            <div class="result-success">
+                ✅ إجابة صحيحة — ممتاز جدًا، استمر على هذا المستوى.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="result-error">
+                ❌ إجابة غير صحيحة — الإجابة الصحيحة هي: {result['correct_key']}
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("### ✍️ الشرح خطوة بخطوة")
+        st.markdown(result["explanation"])
+
+elif page == "📺 أكاديمية الفيديو":
+    st.markdown('<div class="section-title">أكاديمية الفيديو التعليمية</div>', unsafe_allow_html=True)
+
+    for subject, info in SUBJECTS_DATA.items():
+        with st.expander(f"{info['icon']} {subject}"):
+            st.markdown(f"""
+            <div class="glass-card">
+                <div class="subject-name">{subject}</div>
+                <div class="small-muted">
+                    {info['description']}<br>
+                    موضوعات بارزة: {", ".join(info['topics'])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.button(f"فتح دروس {subject}", key=f"video_{subject}"):
+                profile["stats"]["video_clicks"] += 1
+                save_profile(profile)
+                st.link_button(f"🎥 الذهاب إلى دروس {subject}", info["yt"])
+
+elif page == "📈 التحليلات والأداء":
+    st.markdown('<div class="section-title">التحليلات ومؤشرات الأداء</div>', unsafe_allow_html=True)
+
+    total_questions = profile["stats"]["questions_answered"]
+    correct_answers = profile["stats"]["correct_answers"]
+    wrong_answers = max(total_questions - correct_answers, 0)
+    accuracy = percent(correct_answers, total_questions)
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(
-            f'<div class="mini-card"><div class="metric-title">عدد المحاكاة</div><div class="metric-value">{total_exams}</div></div>',
-            unsafe_allow_html=True,
-        )
+        render_metric_card("الإجابات الصحيحة", str(correct_answers), "إجمالي ما تم حله بشكل صحيح")
     with c2:
-        st.markdown(
-            f'<div class="mini-card"><div class="metric-title">متوسط النسبة</div><div class="metric-value">{avg}%</div></div>',
-            unsafe_allow_html=True,
-        )
+        render_metric_card("الإجابات الخاطئة", str(wrong_answers), "الأسئلة التي تحتاج مراجعة")
     with c3:
-        st.markdown(
-            f'<div class="mini-card"><div class="metric-title">أسئلة المراجعة</div><div class="metric-value">{len(wrongs)}</div></div>',
-            unsafe_allow_html=True,
-        )
+        render_metric_card("الدقة الكلية", f"{accuracy}%", performance_message())
 
-def format_seconds(seconds_left: int) -> str:
-    seconds_left = max(0, seconds_left)
-    h = seconds_left // 3600
-    m = (seconds_left % 3600) // 60
-    s = seconds_left % 60
-    return f"{h:02d}:{m:02d}:{s:02d}"
-
-def calculate_exam_result(questions: List[Dict[str, Any]], answers: Dict[str, str]):
-    score = 0
-    details = []
-    for i, q in enumerate(questions):
-        qid = f"exam_q_{i}"
-        selected = answers.get(qid)
-        correct = q["correct"]
-        is_ok = selected == correct
-        if is_ok:
-            score += 1
-        details.append({
-            "question": q["question"],
-            "selected": selected,
-            "correct": correct,
-            "is_ok": is_ok,
-            "options": q["options"],
-            "solution_title": q["solution_title"],
-            "solution_steps": q["solution_steps"],
+    st.markdown("### 📊 تقدم المواد")
+    progress_rows = []
+    for subject in SUBJECTS_DATA.keys():
+        progress_rows.append({
+            "المادة": subject,
+            "نسبة التقدم": profile["subject_progress"].get(subject, 0)
         })
-    return score, len(questions), details
+    progress_df = pd.DataFrame(progress_rows)
+    st.dataframe(progress_df, use_container_width=True, hide_index=True)
 
-def render_solution_steps(steps: List[str]):
-    for step in steps:
-        if "\\" in step or "$" in step:
-            cleaned = step.strip()
-            if cleaned.startswith(r"\(") or cleaned.startswith(r"\[") or cleaned.startswith(r"\frac") or cleaned.startswith(r"\Sigma") or cleaned.startswith(r"\int") or cleaned.startswith(r"\text"):
-                try:
-                    st.latex(cleaned.replace(r"\(", "").replace(r"\)", ""))
-                except Exception:
-                    st.write(f"• {step}")
-            else:
-                st.write(f"• {step}")
-        else:
-            st.write(f"• {step}")
+    st.markdown("### 🧾 سجل الأداء المختصر")
+    df = chart_dataframe()
+    if df.empty:
+        st.info("لا توجد بيانات كافية بعد. ابدأ بحل بعض الأسئلة.")
+    else:
+        st.dataframe(df, use_container_width=True, hide_index=True)
 
-# =========================================================
-# الشريط الجانبي
-# =========================================================
-with st.sidebar:
-    st.markdown("## التنقل داخل المنصة")
-    page = st.radio(
-        "اختر القسم",
-        [
-            "الصفحة الرئيسية",
-            "ملخصات الدروس",
-            "بنك الأسئلة التفاعلي",
-            "قاعة محاكاة الامتحان",
-            "المراجعة لاحقًا",
-            "تتبع التقدم",
-        ],
-        index=0,
-    )
-    st.markdown("---")
-    chosen_subject = st.selectbox("اختر المادة", SUBJECTS, index=SUBJECTS.index(st.session_state.selected_subject))
-    st.session_state.selected_subject = chosen_subject
-    st.markdown("---")
-    st.caption("منصة عربية احترافية للمذاكرة المركزة والامتحان الذكي")
+    if profile.get("exam_history"):
+        st.markdown("### 🕒 آخر المحاولات")
+        recent = pd.DataFrame(profile["exam_history"]).tail(10).iloc[::-1]
+        recent = recent.rename(columns={
+            "timestamp": "الوقت",
+            "subject": "المادة",
+            "topic": "الموضوع",
+            "difficulty": "الصعوبة",
+            "correct": "النتيجة"
+        })
+        recent["النتيجة"] = recent["النتيجة"].map({True: "صحيحة", False: "خاطئة"})
+        st.dataframe(recent, use_container_width=True, hide_index=True)
 
-# =========================================================
-# الصفحة الرئيسية
-# =========================================================
-if page == "الصفحة الرئيسية":
-    st.markdown(
-        f"""
-        <div class="hero-box">
-            <div class="hero-title">{APP_TITLE}</div>
-            <div class="hero-sub">
-                منصة تعليمية احترافية للصف الثالث الثانوي – شعبة علمي رياضة،
-                تجمع بين العرض العلمي المنظم، التدريب التفاعلي، ومحاكاة الامتحان النهائي
-                في تجربة عربية هادئة عالية المستوى.
-            </div>
+elif page == "🗓️ الخطة اليومية":
+    st.markdown('<div class="section-title">الخطة اليومية التنفيذية</div>', unsafe_allow_html=True)
+
+    acc = percent(profile["stats"]["correct_answers"], profile["stats"]["questions_answered"])
+
+    if acc >= 80:
+        level_plan = "اليوم مناسب لاختبار متوسط إلى مرتفع الصعوبة مع مراجعة سريعة قبل النوم."
+    elif acc >= 60:
+        level_plan = "يُفضّل تقسيم اليوم بين مراجعة أساسيات + اختبار قصير + تصحيح الأخطاء."
+    else:
+        level_plan = "خطة إنقاذ: ابدأ بملخصات الدروس، ثم حل 5 أسئلة فقط لكل مادة صعبة."
+
+    st.markdown(f"""
+    <div class="glass-card">
+        <div class="subject-name">📌 توصية اليوم</div>
+        <div class="small-muted">{level_plan}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    tasks = [
+        next_daily_task(),
+        "حل اختبار قصير في المادة ذات أقل نسبة تقدم.",
+        "فتح ملف PDF واحد ومراجعته لمدة 25 دقيقة.",
+        "مشاهدة فيديو واحد فقط مع تدوين 5 ملاحظات.",
+        "إعادة حل سؤال خاطئ سابقًا حتى تثبيت الفكرة."
+    ]
+
+    for i, task in enumerate(tasks, start=1):
+        st.markdown(f"""
+        <div class="glass-card">
+            <span class="info-chip">المهمة {i}</span>
+            <div class="small-muted">{task}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        """, unsafe_allow_html=True)
 
-    metric_cards()
+elif page == "⚙️ الإعدادات":
+    st.markdown('<div class="section-title">الإعدادات الشخصية</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">مكونات المنصة</div>', unsafe_allow_html=True)
-    st.write("• ملخصات منهجية موسعة لكل مادة مع تقسيمات الفصول الأساسية.")
-    st.write("• أسئلة اختيار من متعدد بأربع بدائل واضحة A / B / C / D.")
-    st.write("• اعتماد الإجابة لكل سؤال مع تصحيح فوري وحل خطوة بخطوة.")
-    st.write("• قاعة محاكاة امتحان بزمن 3 ساعات واحتساب آلي للدرجة.")
-    st.write("• سجل خاص بالأسئلة الخاطئة للعودة إليها في أي وقت.")
-    st.write("• قاعدة بيانات محلية لحفظ نتائج المحاكاة وتتبع التقدم.")
-    st.markdown("</div>", unsafe_allow_html=True)
+    new_name = st.text_input("اسم الطالب", value=profile.get("student_name", "أدهم"))
+    new_target = st.slider("الهدف النهائي (%)", 50, 100, int(profile.get("target_score", 95)))
+    theme = st.selectbox("النمط البصري", ["إمبراطوري ليلي", "ذهبي رسمي", "أزرق ملكي"], index=0)
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">أفضل طريقة للاستخدام</div>', unsafe_allow_html=True)
-    st.info(
-        "ابدأ بملخصات المادة، ثم درّب نفسك من خلال بنك الأسئلة التفاعلي، "
-        "وبعد تثبيت القوانين انتقل إلى قاعة محاكاة الامتحان لقياس مستواك الواقعي."
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("💾 حفظ الإعدادات"):
+        profile["student_name"] = new_name.strip() or "أدهم"
+        profile["target_score"] = new_target
+        profile["theme_mode"] = theme
+        profile["last_login"] = str(datetime.now())
+        save_profile(profile)
+        st.success("تم حفظ الإعدادات بنجاح.")
 
-# =========================================================
-# ملخصات الدروس
-# =========================================================
-elif page == "ملخصات الدروس":
-    subject = st.session_state.selected_subject
-    content = LESSON_SUMMARIES.get(subject)
+    st.markdown("### 🧹 أدوات النظام")
+    if st.button("إعادة تعيين سجل الأداء"):
+        current_name = profile.get("student_name", "أدهم")
+        current_target = profile.get("target_score", 95)
+        current_theme = profile.get("theme_mode", "إمبراطوري ليلي")
 
-    st.markdown(f'<div class="subject-title">{subject}</div>', unsafe_allow_html=True)
+        profile = default_profile()
+        profile["student_name"] = current_name
+        profile["target_score"] = current_target
+        profile["theme_mode"] = current_theme
+        save_profile(profile)
 
-    if not content:
-        st.warning("لا توجد بيانات متاحة لهذه المادة حاليًا.")
-    else:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">الملخص العام</div>', unsafe_allow_html=True)
-        st.write(content["intro"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">الفصول الرئيسية والقوانين الأساسية</div>', unsafe_allow_html=True)
-
-        for chapter in content["chapters"]:
-            st.markdown(f'<div class="chapter-box">', unsafe_allow_html=True)
-            st.markdown(f"### {chapter['title']}")
-            for law in chapter["laws"]:
-                st.markdown(f"**{law['name']}**")
-                st.latex(law["latex"])
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.session_state.current_question = None
+        st.session_state.last_result = None
+        st.success("تم تصفير الأداء مع الإبقاء على الإعدادات الأساسية.")
 
 # =========================================================
-# بنك الأسئلة التفاعلي
+# Footer
 # =========================================================
-elif page == "بنك الأسئلة التفاعلي":
-    subject = st.session_state.selected_subject
-    st.markdown(f'<div class="subject-title">بنك الأسئلة التفاعلي — {subject}</div>', unsafe_allow_html=True)
-
-    questions = QUESTION_BANK.get(subject, [])
-    if not questions:
-        st.warning("لا توجد أسئلة مضافة لهذه المادة حاليًا.")
-    else:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">أجب عن كل سؤال ثم اعتمد الإجابة للحصول على التصحيح الفوري</div>', unsafe_allow_html=True)
-
-        for idx, q in enumerate(questions):
-            st.markdown(f'<div class="exam-box">', unsafe_allow_html=True)
-            st.markdown(f"**السؤال {idx + 1}:** {q['question']}")
-
-            radio_key = f"quiz_choice_{subject}_{idx}"
-            submit_key = f"quiz_submit_{subject}_{idx}"
-
-            selected = st.radio(
-                f"اختر الإجابة الصحيحة للسؤال {idx + 1}",
-                options=["A", "B", "C", "D"],
-                format_func=lambda x, opts=q["options"]: f"{x}) {opts[x]}",
-                key=radio_key,
-                horizontal=False,
-                index=None,
-            )
-
-            if st.button("اعتماد الإجابة", key=submit_key):
-                if selected is None:
-                    st.warning("يجب اختيار إجابة أولًا قبل الاعتماد.")
-                else:
-                    correct_key = q["correct"]
-                    choices_list = [f"{k}) {v}" for k, v in q["options"].items()]
-
-                    if selected == correct_key:
-                        st.markdown(
-                            f"""
-                            <div class="good-answer">
-                                <b>إجابة صحيحة.</b><br>
-                                الإجابة المعتمدة: {selected}) {q['options'][selected]}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            f"""
-                            <div class="bad-answer">
-                                <b>إجابة غير صحيحة.</b><br>
-                                إجابتك: {selected}) {q['options'][selected]}<br>
-                                الإجابة الصحيحة: {correct_key}) {q['options'][correct_key]}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                        save_wrong_answer(
-                            subject=subject,
-                            question_text=q["question"],
-                            choices=choices_list,
-                            correct_answer=f"{correct_key}) {q['options'][correct_key]}",
-                            explanation=" | ".join(q["solution_steps"]),
-                            source_type="بنك الأسئلة"
-                        )
-
-                    st.markdown(f"**{q['solution_title']}**")
-                    render_solution_steps(q["solution_steps"])
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================================================
-# قاعة محاكاة الامتحان
-# =========================================================
-elif page == "قاعة محاكاة الامتحان":
-    st.markdown('<div class="subject-title">قاعة محاكاة الامتحان النهائي</div>', unsafe_allow_html=True)
-
-    exam_subject = st.selectbox("اختر مادة الامتحان", SUBJECTS, index=SUBJECTS.index(st.session_state.exam_subject))
-    st.session_state.exam_subject = exam_subject
-
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if st.button("بدء امتحان جديد"):
-            st.session_state.exam_questions = build_mock_exam(exam_subject)
-            st.session_state.exam_answers = {}
-            st.session_state.exam_started = True
-            st.session_state.exam_submitted = False
-            st.session_state.exam_start_time = time.time()
-            st.session_state.saved_exam_once = False
-            st.rerun()
-
-    with c2:
-        st.info("مدة الامتحان: 3 ساعات")
-
-    if st.session_state.exam_started and st.session_state.exam_subject == exam_subject:
-        elapsed = int(time.time() - st.session_state.exam_start_time) if st.session_state.exam_start_time else 0
-        remaining = st.session_state.exam_duration_seconds - elapsed
-
-        t1, t2 = st.columns([1, 2])
-        with t1:
-            st.metric("الوقت المتبقي", format_seconds(remaining))
-        with t2:
-            st.progress(max(0, remaining) / st.session_state.exam_duration_seconds)
-
-        if remaining <= 0:
-            st.warning("انتهى زمن الامتحان وتم الانتقال إلى التصحيح النهائي.")
-            st.session_state.exam_submitted = True
-
-        if not st.session_state.exam_questions:
-            st.warning("لا توجد أسئلة كافية لبناء امتحان لهذه المادة حاليًا.")
-        else:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">نموذج الامتحان</div>', unsafe_allow_html=True)
-
-            for idx, q in enumerate(st.session_state.exam_questions):
-                qid = f"exam_q_{idx}"
-                st.markdown(f'<div class="exam-box">', unsafe_allow_html=True)
-                st.markdown(f"**السؤال {idx + 1}:** {q['question']}")
-
-                ans = st.radio(
-                    f"اختر الإجابة الصحيحة للسؤال {idx + 1}",
-                    options=["A", "B", "C", "D"],
-                    format_func=lambda x, opts=q["options"]: f"{x}) {opts[x]}",
-                    key=f"exam_radio_{qid}",
-                    index=None,
-                    disabled=st.session_state.exam_submitted
-                )
-
-                if ans is not None:
-                    st.session_state.exam_answers[qid] = ans
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            if not st.session_state.exam_submitted:
-                if st.button("تسليم الامتحان"):
-                    st.session_state.exam_submitted = True
-                    st.rerun()
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            if st.session_state.exam_submitted:
-                score, total, details = calculate_exam_result(
-                    st.session_state.exam_questions,
-                    st.session_state.exam_answers
-                )
-                percentage = round((score / total) * 100, 2) if total else 0.0
-
-                if not st.session_state.saved_exam_once:
-                    save_exam_score(
-                        subject=st.session_state.exam_subject,
-                        score=score,
-                        total=total,
-                        exam_type="محاكاة نهائية"
-                    )
-                    st.session_state.saved_exam_once = True
-
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="section-title">النتيجة النهائية</div>', unsafe_allow_html=True)
-                st.progress(percentage / 100 if total else 0)
-                st.success(f"الدرجة النهائية: {score} من {total} — بنسبة {percentage}%")
-
-                if percentage >= 85:
-                    st.info("أداء ممتاز جدًا. استمر بهذا المستوى مع زيادة كثافة التدريب على التنويعات.")
-                elif percentage >= 65:
-                    st.info("أداء جيد، ويحتاج إلى مزيد من التثبيت في النقاط التي ظهر بها تراجع.")
-                else:
-                    st.warning("يلزم مراجعة مركزة للفصول الأساسية والعودة إلى سجل الأخطاء.")
-
-                st.markdown("### تحليل الإجابات")
-                for i, item in enumerate(details, start=1):
-                    correct_key = item["correct"]
-                    selected = item["selected"]
-
-                    if item["is_ok"]:
-                        st.markdown(
-                            f"""
-                            <div class="good-answer">
-                                <b>السؤال {i}:</b> إجابة صحيحة.<br>
-                                الاختيار الصحيح: {correct_key}) {item['options'][correct_key]}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            f"""
-                            <div class="bad-answer">
-                                <b>السؤال {i}:</b> إجابة غير صحيحة.<br>
-                                إجابتك: {selected if selected else "لم يتم اختيار إجابة"}<br>
-                                الإجابة الصحيحة: {correct_key}) {item['options'][correct_key]}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                        save_wrong_answer(
-                            subject=st.session_state.exam_subject,
-                            question_text=item["question"],
-                            choices=[f"{k}) {v}" for k, v in item["options"].items()],
-                            correct_answer=f"{correct_key}) {item['options'][correct_key]}",
-                            explanation=" | ".join(item["solution_steps"]),
-                            source_type="محاكاة الامتحان"
-                        )
-
-                    st.markdown(f"**{item['solution_title']}**")
-                    render_solution_steps(item["solution_steps"])
-                    st.markdown("---")
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-        if not st.session_state.exam_submitted:
-            time.sleep(1)
-            st.rerun()
-
-    else:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.write("ابدأ امتحانًا جديدًا لاختبار مستواك في صورة قريبة من الامتحان الفعلي.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================================================
-# المراجعة لاحقًا
-# =========================================================
-elif page == "المراجعة لاحقًا":
-    st.markdown('<div class="subject-title">سجل المراجعة اللاحقة</div>', unsafe_allow_html=True)
-
-    filter_subject = st.selectbox("تصفية حسب المادة", ["كل المواد"] + SUBJECTS)
-    rows = fetch_wrong_answers(None if filter_subject == "كل المواد" else filter_subject)
-
-    if not rows:
-        st.info("لا توجد أسئلة محفوظة للمراجعة في الوقت الحالي.")
-    else:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">الأسئلة التي تحتاج إلى مراجعة إضافية</div>', unsafe_allow_html=True)
-
-        for row in rows:
-            item_id, subject, q_text, choices_json, correct_answer, explanation, source_type, created_at = row
-            choices = json.loads(choices_json)
-
-            st.markdown(f'<div class="exam-box">', unsafe_allow_html=True)
-            st.markdown(f"**المادة:** {subject}")
-            st.markdown(f"**المصدر:** {source_type}")
-            st.markdown(f"**تاريخ الحفظ:** {created_at}")
-            st.markdown(f"**السؤال:** {q_text}")
-            st.markdown("**الاختيارات:**")
-            for c in choices:
-                st.write(f"• {c}")
-            st.markdown(f"**الإجابة الصحيحة:** {correct_answer}")
-            st.markdown("**الشرح المختصر:**")
-            for piece in explanation.split(" | "):
-                st.write(f"• {piece}")
-
-            if st.button("حذف من السجل", key=f"delete_wrong_{item_id}"):
-                delete_wrong_answer(item_id)
-                st.rerun()
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================================================
-# تتبع التقدم
-# =========================================================
-elif page == "تتبع التقدم":
-    st.markdown('<div class="subject-title">تتبع التقدم والنتائج</div>', unsafe_allow_html=True)
-    rows = fetch_scores()
-
-    if not rows:
-        st.info("لا توجد نتائج محفوظة بعد. أكمل أول محاكاة امتحان ليبدأ تتبع التقدم.")
-    else:
-        total_count = len(rows)
-        avg_perc = round(sum(r[3] for r in rows) / total_count, 2)
-        best_perc = max(r[3] for r in rows)
-        latest_perc = rows[0][3]
-
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown(
-                f'<div class="mini-card"><div class="metric-title">آخر نسبة</div><div class="metric-value">{latest_perc}%</div></div>',
-                unsafe_allow_html=True,
-            )
-        with c2:
-            st.markdown(
-                f'<div class="mini-card"><div class="metric-title">المتوسط العام</div><div class="metric-value">{avg_perc}%</div></div>',
-                unsafe_allow_html=True,
-            )
-        with c3:
-            st.markdown(
-                f'<div class="mini-card"><div class="metric-title">أفضل نسبة</div><div class="metric-value">{best_perc}%</div></div>',
-                unsafe_allow_html=True,
-            )
-
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">سجل نتائج المحاكاة</div>', unsafe_allow_html=True)
-
-        subject_groups: Dict[str, List[float]] = {}
-        for idx, row in enumerate(rows, start=1):
-            subject, score, total, percentage, exam_type, created_at = row
-            subject_groups.setdefault(subject, []).append(percentage)
-
-            st.markdown(f'<div class="exam-box">', unsafe_allow_html=True)
-            st.markdown(f"**#{idx}**")
-            st.markdown(f"**المادة:** {subject}")
-            st.markdown(f"**نوع التقييم:** {exam_type}")
-            st.markdown(f"**الدرجة:** {score} / {total}")
-            st.markdown(f"**النسبة:** {percentage}%")
-            st.markdown(f"**التاريخ:** {created_at}")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown("### متوسط الأداء حسب المادة")
-        for subject, vals in subject_groups.items():
-            avg_sub = round(sum(vals) / len(vals), 2)
-            st.write(f"**{subject}**")
-            st.progress(avg_sub / 100)
-            st.caption(f"متوسط الأداء في هذه المادة: {avg_sub}%")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================================================
-# التذييل
-# =========================================================
-st.markdown(
-    '<div class="footer-note">منصة تعليمية عربية احترافية مصممة لرفع كفاءة طالب الصف الثالث الثانوي — شعبة علمي رياضة.</div>',
-    unsafe_allow_html=True,
-    )
+st.markdown("""
+<div class="footer-note">
+    تم تطوير هذه النسخة لتكون نواة منصة تعليمية عربية فائقة الفخامة وقابلة للتوسع إلى:
+    حسابات متعددة، ذكاء اصطناعي، واجهات مدرس/ولي أمر، اختبارات شاملة، تقارير PDF، ولوحة إدارة مركزية.
+</div>
+""", unsafe_allow_html=True)
