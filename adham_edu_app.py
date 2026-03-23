@@ -5,18 +5,18 @@ import json
 import random
 import re
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 import pandas as pd
 import streamlit as st
 
 # =========================================================
-# حصن أدهم التعليمي V101 - Google Drive Fusion Edition
+# حصن أدهم التعليمي V102 - Final Imperial Edition
 # =========================================================
 
 APP_TITLE = "حصن أدهم التعليمي"
-APP_VERSION = "V101"
+APP_VERSION = "V102"
 APP_ICON = "🏛️"
 
 st.set_page_config(
@@ -27,25 +27,26 @@ st.set_page_config(
 )
 
 # =========================================================
-# مسارات آمنة
+# إعدادات المسارات الآمنة
 # =========================================================
 BASE_DIR = Path(".")
+
 
 def ensure_directory(path: Path) -> Path:
     if path.exists():
         if path.is_dir():
             return path
-        else:
-            st.error(f"يوجد عنصر باسم {path.name} لكنه ملف وليس مجلدًا. احذف الملف أو غيّر اسمه.")
-            st.stop()
+        st.error(f"يوجد عنصر باسم {path.name} لكنه ملف وليس مجلدًا. احذف الملف أو غيّر اسمه.")
+        st.stop()
     path.mkdir(parents=True, exist_ok=True)
     return path
+
 
 DATA_DIR = ensure_directory(BASE_DIR / "hisn_adham_data")
 DATA_FILE = DATA_DIR / "student_data.json"
 
 # =========================================================
-# CSS إمبراطوري
+# CSS إمبراطوري فخم + إبراز الاختيارات
 # =========================================================
 st.markdown("""
 <style>
@@ -85,12 +86,36 @@ div[data-testid="stSidebar"] {
     overflow: hidden;
 }
 
+.hero-box:before {
+    content: "";
+    position: absolute;
+    top: -60px;
+    left: -60px;
+    width: 160px;
+    height: 160px;
+    background: radial-gradient(circle, rgba(255,215,0,0.22), transparent 70%);
+    border-radius: 50%;
+}
+
+.hero-box:after {
+    content: "";
+    position: absolute;
+    bottom: -70px;
+    right: -70px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(59,130,246,0.20), transparent 70%);
+    border-radius: 50%;
+}
+
 .hero-title {
     text-align: center;
     color: #ffd700;
     font-size: 2.2rem;
     font-weight: 900;
     margin-bottom: 8px;
+    position: relative;
+    z-index: 2;
 }
 
 .hero-sub {
@@ -98,6 +123,8 @@ div[data-testid="stSidebar"] {
     color: #dbeafe;
     font-size: 1rem;
     line-height: 2;
+    position: relative;
+    z-index: 2;
 }
 
 .section-title {
@@ -208,33 +235,6 @@ div[data-testid="stSidebar"] {
     font-size: 0.94rem;
 }
 
-.option-key {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ffd700, #facc15);
-    color: #111827;
-    font-weight: 900;
-    font-size: 1.1rem;
-    margin-left: 10px;
-    box-shadow: 0 8px 18px rgba(250,204,21,0.25);
-    border: 1px solid rgba(255,215,0,0.35);
-}
-
-.option-row {
-    display: flex;
-    align-items: center;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-}
-
 .drive-card {
     background: linear-gradient(135deg, rgba(30,41,59,0.90), rgba(15,23,42,0.90));
     border: 1px solid rgba(255,255,255,0.08);
@@ -243,12 +243,72 @@ div[data-testid="stSidebar"] {
     margin-bottom: 14px;
 }
 
-.footer-note {
-    text-align: center;
-    color: #cbd5e1;
-    margin-top: 32px;
-    font-size: 0.9rem;
-    opacity: 0.92;
+.option-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.option-legend-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,215,0,0.04));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 14px;
+    min-height: 80px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+}
+
+.option-badge {
+    min-width: 54px;
+    width: 54px;
+    height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ffd700, #facc15);
+    color: #111827;
+    font-size: 1.25rem;
+    font-weight: 900;
+    box-shadow: 0 10px 22px rgba(250,204,21,0.28);
+    border: 1px solid rgba(255,215,0,0.35);
+}
+
+.option-text {
+    color: #f8fafc;
+    font-weight: 700;
+    line-height: 1.8;
+    font-size: 0.98rem;
+}
+
+div[data-testid="stRadio"] > div {
+    gap: 0.55rem !important;
+}
+
+div[data-testid="stRadio"] label {
+    background: linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 18px;
+    padding: 14px 16px !important;
+    margin-bottom: 8px;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+div[data-testid="stRadio"] label:hover {
+    border: 1px solid rgba(255,215,0,0.35);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+}
+
+div[data-testid="stRadio"] label p {
+    color: #f8fafc !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    line-height: 1.9 !important;
 }
 
 .stButton > button,
@@ -266,24 +326,50 @@ div[data-testid="stSidebar"] {
     box-shadow: 0 8px 20px rgba(250,204,21,0.22);
 }
 
-div[data-testid="stRadio"] label {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
+.stLinkButton a {
     width: 100%;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 48px !important;
+    border-radius: 14px !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
 .stProgress > div > div > div > div {
     background: linear-gradient(90deg, #facc15, #38bdf8) !important;
+}
+
+.footer-note {
+    text-align: center;
+    color: #cbd5e1;
+    margin-top: 32px;
+    font-size: 0.9rem;
+    opacity: 0.92;
+}
+
+@media (max-width: 768px) {
+    .option-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-title {
+        font-size: 1.7rem;
+    }
+
+    .metric-value {
+        font-size: 1.6rem;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================================================
 # روابط Google Drive
-# مأخوذة من الكود المرفق الذي حول المكتبة إلى روابط Drive
 # =========================================================
 DRIVE_LINKS = {
     "الرياضيات التطبيقية (1)": "https://drive.google.com/file/d/1xlzPmrUqCAR7XF4ZaBAFN6WhbvZum3_d/view",
@@ -302,7 +388,7 @@ DRIVE_LINKS = {
 }
 
 # =========================================================
-# بيانات المواد
+# المواد
 # =========================================================
 SUBJECTS: Dict[str, Dict[str, Any]] = {
     "الفيزياء": {
@@ -424,7 +510,7 @@ INTERNAL_QUESTION_BANK: Dict[str, List[Dict[str, Any]]] = {
 }
 
 # =========================================================
-# استدعاء بنك خارجي إن وجد
+# بنك خارجي اختياري
 # =========================================================
 try:
     from questions_bank import ST_QUESTIONS as EXTERNAL_QUESTION_BANK
@@ -432,9 +518,9 @@ except Exception:
     EXTERNAL_QUESTION_BANK = {}
 
 # =========================================================
-# مولد أسئلة ديناميكي مستوحى من الكود المرفق
+# توليد أسئلة ديناميكية عند الحاجة
 # =========================================================
-def generate_dynamic_questions(subject: str, count: int = 40) -> List[Dict[str, Any]]:
+def generate_dynamic_questions(subject: str, count: int = 20) -> List[Dict[str, Any]]:
     topic_map = {
         "الفيزياء": ["قانون أوم", "كيرشوف", "الحث المغناطيسي", "الفيزياء الحديثة"],
         "الكيمياء": ["العناصر الانتقالية", "التحليل الكيميائي", "الكيمياء العضوية", "الاتزان الكيميائي"],
@@ -444,11 +530,11 @@ def generate_dynamic_questions(subject: str, count: int = 40) -> List[Dict[str, 
         "اللغة الإنجليزية": ["Grammar", "Reading", "Vocabulary", "Writing"]
     }
 
-    current_topics = topic_map.get(subject, ["عام"])
+    topics = topic_map.get(subject, ["عام"])
     generated = []
 
     for i in range(1, count + 1):
-        topic = random.choice(current_topics)
+        topic = random.choice(topics)
         generated.append({
             "question": f"سؤال تدريبي متقدم في {topic}: ما النتيجة الأقرب للصواب في الحالة التطبيقية رقم {i}؟",
             "options": {
@@ -458,7 +544,7 @@ def generate_dynamic_questions(subject: str, count: int = 40) -> List[Dict[str, 
                 "D": "يعتمد ذلك على المعطيات"
             },
             "correct": "D" if i % 4 == 0 else "A",
-            "explanation": f"الشرح الإرشادي: راجع موضوع {topic} جيدًا وحدد أثر تغيّر المعطيات على النتيجة النهائية.",
+            "explanation": f"الشرح الإرشادي: راجع موضوع {topic} وحدد أثر تغيّر المعطيات على النتيجة النهائية.",
             "topic": topic,
             "difficulty": "متوسط"
         })
@@ -503,9 +589,9 @@ def normalize_question_item(item: Dict[str, Any], fallback_subject: str = "") ->
         "difficulty": str(item.get("difficulty", "متوسط")).strip()
     }
 
+
 def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
     merged: Dict[str, List[Dict[str, Any]]] = {}
-
     all_subjects = set(INTERNAL_QUESTION_BANK.keys()) | set(EXTERNAL_QUESTION_BANK.keys()) | set(SUBJECTS.keys())
 
     for subject in all_subjects:
@@ -525,11 +611,9 @@ def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
                         seen.add(sig)
                         collected.append(normalized)
 
-        # إضافة أسئلة مولدة تلقائيًا لو المادة عددها قليل
         if len(collected) < 12:
             dynamic_needed = 12 - len(collected)
-            dynamic_items = generate_dynamic_questions(subject, dynamic_needed)
-            for item in dynamic_items:
+            for item in generate_dynamic_questions(subject, dynamic_needed):
                 normalized = normalize_question_item(item, fallback_subject=subject)
                 if normalized:
                     sig = (
@@ -546,10 +630,11 @@ def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
 
     return merged
 
+
 QUESTION_BANK = merge_question_banks()
 
 # =========================================================
-# تخزين البيانات
+# التخزين
 # =========================================================
 def default_student_data() -> Dict[str, Any]:
     return {
@@ -570,33 +655,66 @@ def default_student_data() -> Dict[str, Any]:
         "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
+
 def load_data() -> Dict[str, Any]:
+    template = default_student_data()
+
     if DATA_FILE.exists():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 loaded = json.load(f)
-            template = default_student_data()
-            template.update(loaded)
-            template["stats"].update(loaded.get("stats", {}))
-            template["subject_progress"].update(loaded.get("subject_progress", {}))
-            return template
+
+            if isinstance(loaded, dict):
+                template.update(loaded)
+
+            if isinstance(loaded.get("stats"), dict):
+                template["stats"].update(loaded["stats"])
+
+            if isinstance(loaded.get("subject_progress"), dict):
+                template["subject_progress"].update(loaded["subject_progress"])
+
         except Exception:
-            return default_student_data()
-    return default_student_data()
+            pass
+
+    template.setdefault("student_name", "أدهم")
+    template.setdefault("target_score", 95)
+    template.setdefault("theme", "إمبراطوري ليلي")
+    template.setdefault("history", [])
+    template.setdefault("achievements", [])
+    template.setdefault("favorites", [])
+    template.setdefault("last_seen", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    template.setdefault("stats", {})
+    template["stats"].setdefault("questions_answered", 0)
+    template["stats"].setdefault("correct_answers", 0)
+    template["stats"].setdefault("drive_opened", 0)
+    template["stats"].setdefault("video_clicks", 0)
+    template["stats"].setdefault("mock_exams_taken", 0)
+
+    template.setdefault("subject_progress", {})
+    for subject in SUBJECTS.keys():
+        template["subject_progress"].setdefault(subject, 0)
+
+    return template
+
 
 def save_data(data: Dict[str, Any]) -> None:
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+
 data = load_data()
+save_data(data)
 
 # =========================================================
 # Session State
 # =========================================================
 defaults = {
     "current_question": None,
+    "current_question_subject": None,
     "question_result": None,
     "exam_questions": [],
+    "exam_subject": None,
     "exam_answers": {},
     "exam_submitted": False
 }
@@ -610,8 +728,13 @@ for k, v in defaults.items():
 def calc_percent(part: int, total: int) -> float:
     return round((part / total) * 100, 1) if total else 0.0
 
+
 def get_accuracy() -> float:
-    return calc_percent(data["stats"].get("correct_answers", 0), data["stats"].get("questions_answered", 0))
+    return calc_percent(
+        data.get("stats", {}).get("correct_answers", 0),
+        data.get("stats", {}).get("questions_answered", 0)
+    )
+
 
 def metric_card(label: str, value: str, note: str) -> None:
     st.markdown(f"""
@@ -622,8 +745,9 @@ def metric_card(label: str, value: str, note: str) -> None:
     </div>
     """, unsafe_allow_html=True)
 
+
 def get_status_label() -> str:
-    answered = data["stats"].get("questions_answered", 0)
+    answered = data.get("stats", {}).get("questions_answered", 0)
     acc = get_accuracy()
     if answered == 0:
         return "بداية قوية"
@@ -637,19 +761,31 @@ def get_status_label() -> str:
         return "يحتاج صقل"
     return "خطة إنقاذ"
 
+
 def add_favorite(name: str) -> None:
-    if name not in data["favorites"]:
+    if name not in data.get("favorites", []):
+        data.setdefault("favorites", [])
         data["favorites"].append(name)
         save_data(data)
 
-def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str, mode: str = "single_question") -> None:
-    data["stats"]["questions_answered"] += 1
-    if correct:
-        data["stats"]["correct_answers"] += 1
 
-    progress = data["subject_progress"].get(subject, 0)
+def increment_stat(key: str, amount: int = 1) -> None:
+    data.setdefault("stats", {})
+    data["stats"][key] = data["stats"].get(key, 0) + amount
+    save_data(data)
+
+
+def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str, mode: str = "single_question") -> None:
+    data.setdefault("stats", {})
+    data["stats"]["questions_answered"] = data["stats"].get("questions_answered", 0) + 1
+    if correct:
+        data["stats"]["correct_answers"] = data["stats"].get("correct_answers", 0) + 1
+
+    progress = data.get("subject_progress", {}).get(subject, 0)
+    data.setdefault("subject_progress", {})
     data["subject_progress"][subject] = min(100, progress + (6 if correct else 2))
 
+    data.setdefault("history", [])
     data["history"].append({
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "subject": subject,
@@ -658,7 +794,9 @@ def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str
         "correct": correct,
         "mode": mode
     })
+
     save_data(data)
+
 
 def create_exam(subject: str, num_questions: int = 10) -> List[Dict[str, Any]]:
     bank = QUESTION_BANK.get(subject, [])
@@ -666,29 +804,52 @@ def create_exam(subject: str, num_questions: int = 10) -> List[Dict[str, Any]]:
         return []
     if len(bank) >= num_questions:
         return random.sample(bank, num_questions)
-    return [random.choice(bank) for _ in range(num_questions)]
+
+    combined = bank.copy()
+    dynamic_needed = num_questions - len(combined)
+    combined.extend(generate_dynamic_questions(subject, dynamic_needed))
+    return combined[:num_questions]
+
 
 def format_option_label(key: str, text: str) -> str:
-    plain_text = re.sub(r"\s+", " ", text).strip()
-    return f"{key} — {plain_text}"
+    plain_text = re.sub(r"\s+", " ", str(text)).strip()
+    return f"{key} | {plain_text}"
+
 
 def render_option_legend(q: Dict[str, Any]) -> None:
-    html = ""
+    html = '<div class="option-grid">'
     for key, val in q["options"].items():
         html += f"""
-        <div class="option-row">
-            <span class="option-key">{key}</span>
-            <span>{val}</span>
+        <div class="option-legend-card">
+            <span class="option-badge">{key}</span>
+            <span class="option-text">{val}</span>
         </div>
         """
+    html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
+
 
 def get_drive_items_by_subject(subject: str) -> List[tuple]:
     result = []
     for title, link in DRIVE_LINKS.items():
-        if subject in title or (subject == "الرياضيات البحتة" and "الرياضيات البحتة" in title) or (subject == "الرياضيات التطبيقية" and "الرياضيات التطبيقية" in title):
+        if subject in title:
             result.append((title, link))
     return result
+
+
+def reset_single_question_state(subject: str) -> None:
+    if st.session_state.current_question_subject != subject:
+        st.session_state.current_question = None
+        st.session_state.question_result = None
+        st.session_state.current_question_subject = subject
+
+
+def reset_exam_state(subject: str) -> None:
+    if st.session_state.exam_subject != subject:
+        st.session_state.exam_questions = []
+        st.session_state.exam_answers = {}
+        st.session_state.exam_submitted = False
+        st.session_state.exam_subject = subject
 
 # =========================================================
 # Header
@@ -697,9 +858,9 @@ st.markdown(f"""
 <div class="hero-box">
     <div class="hero-title">🏛️ {APP_TITLE} — {APP_VERSION}</div>
     <div class="hero-sub">
-        منصة تعليمية عربية احترافية بواجهة ملكية:
-        مكتبة سحابية عبر Google Drive، بنك أسئلة تفاعلي، اختبارات كبيرة بعدد أسئلة مرن،
-        وتحليلات أداء كاملة مع تصميم أقوى لمفاتيح الاختيارات.
+        منصة تعليمية عربية احترافية بواجهة ملكية فاخرة:
+        مكتبة سحابية عبر Google Drive، بنك أسئلة تفاعلي، اختبارات كبيرة مرنة،
+        وتحليلات أداء كاملة مع مفاتيح اختيارات بارزة وواضحة جدًا.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -725,7 +886,7 @@ with st.sidebar:
     st.markdown(f"**الطالب:** {data.get('student_name', 'أدهم')}")
     st.markdown(f"**الحالة:** {get_status_label()}")
     st.markdown(f"**الهدف:** {data.get('target_score', 95)}%")
-    st.info("💡 كل ملف أصبح يفتح من Google Drive بدل الاعتماد على ملف داخلي.")
+    st.info("💡 تم تأمين البيانات القديمة تلقائيًا لمنع أعطال المفاتيح الناقصة.")
 
 # =========================================================
 # الرئيسية
@@ -735,19 +896,20 @@ if page == "🏠 الرئيسية":
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("إجمالي الأسئلة", str(data["stats"]["questions_answered"]), "تم حلها داخل المنصة")
+        metric_card("إجمالي الأسئلة", str(data.get("stats", {}).get("questions_answered", 0)), "تم حلها داخل المنصة")
     with c2:
         metric_card("نسبة الدقة", f"{get_accuracy()}%", "معدل الإجابات الصحيحة")
     with c3:
-        metric_card("روابط Drive المفتوحة", str(data["stats"]["drive_opened"]), "تفاعل المكتبة السحابية")
+        metric_card("روابط Drive المفتوحة", str(data.get("stats", {}).get("drive_opened", 0)), "تفاعل المكتبة السحابية")
     with c4:
-        metric_card("الاختبارات الكبرى", str(data["stats"]["mock_exams_taken"]), "اختبارات مكتملة")
+        metric_card("الاختبارات الكبرى", str(data.get("stats", {}).get("mock_exams_taken", 0)), "اختبارات مكتملة")
 
     st.markdown('<div class="section-title">المواد الدراسية</div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
+
     for i, (subject, info) in enumerate(SUBJECTS.items()):
         with [col1, col2][i % 2]:
-            progress = data["subject_progress"].get(subject, 0)
+            progress = data.get("subject_progress", {}).get(subject, 0)
             st.markdown(f"""
             <div class="subject-card">
                 <div class="subject-title">{info['icon']} {subject}</div>
@@ -761,6 +923,11 @@ if page == "🏠 الرئيسية":
             </div>
             """, unsafe_allow_html=True)
             st.progress(progress / 100)
+
+    if data.get("favorites"):
+        st.markdown('<div class="section-title">المفضلة</div>', unsafe_allow_html=True)
+        for item in data["favorites"][-5:][::-1]:
+            st.markdown(f"<div class='glass-card'>⭐ {item}</div>", unsafe_allow_html=True)
 
 # =========================================================
 # المكتبة السحابية
@@ -783,23 +950,27 @@ elif page == "☁️ المكتبة السحابية":
         st.markdown(f"""
         <div class="drive-card">
             <div class="subject-title">📂 {selected_name}</div>
-            <div class="small-note">الملف متاح الآن عبر Google Drive ويمكن فتحه في صفحة مستقلة لسرعة أفضل على الهاتف.</div>
+            <div class="small-note">
+                الملف متاح عبر Google Drive.
+                يمكنك تسجيل الفتح ثم الانتقال إليه مباشرة.
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("🚀 فتح الملف الآن"):
-                data["stats"]["drive_opened"] += 1
-                save_data(data)
-                st.link_button("اضغط هنا للانتقال إلى الملف", selected_link)
+            if st.button("📌 تسجيل فتح الملف"):
+                increment_stat("drive_opened", 1)
+                st.success("تم تسجيل فتح الرابط.")
         with c2:
             if st.button("⭐ إضافة للمفضلة", key=f"fav_{selected_name}"):
                 add_favorite(selected_name)
-                st.success("تمت إضافة الملف إلى المفضلة.")
+                st.success("تمت الإضافة إلى المفضلة.")
+
+        st.link_button("🚀 افتح الملف الآن", selected_link)
 
         st.markdown("### 📚 جميع الملفات المتاحة")
-        for title, link in items:
+        for title, _ in items:
             st.markdown(f"""
             <div class="glass-card">
                 <span class="info-chip">Google Drive</span>
@@ -808,23 +979,26 @@ elif page == "☁️ المكتبة السحابية":
             """, unsafe_allow_html=True)
 
 # =========================================================
-# بنك الأسئلة التفاعلي
+# بنك الأسئلة
 # =========================================================
 elif page == "🧠 بنك الأسئلة التفاعلي":
     st.markdown('<div class="section-title">بنك الأسئلة التفاعلي الذكي</div>', unsafe_allow_html=True)
 
     available_subjects = [s for s in SUBJECTS.keys() if QUESTION_BANK.get(s)]
     subject = st.selectbox("اختر المادة:", available_subjects)
+    reset_single_question_state(subject)
 
     col_a, col_b = st.columns([1, 1])
     with col_a:
         if st.button("🎯 توليد سؤال جديد"):
             st.session_state.current_question = random.choice(QUESTION_BANK[subject])
             st.session_state.question_result = None
+            st.session_state.current_question_subject = subject
+
     with col_b:
         drive_items = get_drive_items_by_subject(subject)
         if drive_items:
-            st.link_button("📘 افتح مرجع Drive للمادة", drive_items[0][1])
+            st.link_button("📘 افتح مرجع المادة", drive_items[0][1])
 
     q = st.session_state.current_question
     if q:
@@ -842,13 +1016,13 @@ elif page == "🧠 بنك الأسئلة التفاعلي":
         render_option_legend(q)
 
         user_choice = st.radio(
-            "اختر الإجابة:",
+            "اختر الإجابة الصحيحة:",
             [format_option_label(k, v) for k, v in q["options"].items()],
-            key="single_question_answer"
+            key=f"single_question_answer_{subject}"
         )
 
         if st.button("✅ تأكيد الإجابة"):
-            selected_key = user_choice.split("—")[0].strip()
+            selected_key = user_choice.split("|")[0].strip()
             is_correct = selected_key == q["correct"]
 
             st.session_state.question_result = {
@@ -866,7 +1040,7 @@ elif page == "🧠 بنك الأسئلة التفاعلي":
             st.markdown("<div class='success-box'>✅ إجابة صحيحة — أداء ممتاز جدًا.</div>", unsafe_allow_html=True)
         else:
             st.markdown(
-                f"<div class='error-box'>❌ إجابة غير صحيحة — الصحيحة: {res['correct_key']} — {res['correct_text']}</div>",
+                f"<div class='error-box'>❌ إجابة غير صحيحة — الصحيحة: {res['correct_key']} | {res['correct_text']}</div>",
                 unsafe_allow_html=True
             )
         st.markdown("### ✍️ شرح الإجابة")
@@ -879,7 +1053,8 @@ elif page == "📝 الاختبار الكبير":
     st.markdown('<div class="section-title">الاختبار الكبير بعدد أسئلة مرن</div>', unsafe_allow_html=True)
 
     available_subjects = [s for s in SUBJECTS.keys() if QUESTION_BANK.get(s)]
-    subject = st.selectbox("اختر مادة الاختبار:", available_subjects, key="exam_subject")
+    subject = st.selectbox("اختر مادة الاختبار:", available_subjects, key="exam_subject_selector")
+    reset_exam_state(subject)
 
     question_count = st.slider(
         "عدد الأسئلة",
@@ -892,18 +1067,10 @@ elif page == "📝 الاختبار الكبير":
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🚀 إنشاء اختبار جديد"):
-            # لو العدد كبير جدًا نولّد مزيجًا من البنك + أسئلة ديناميكية
-            bank = QUESTION_BANK.get(subject, [])
-            if len(bank) >= question_count:
-                st.session_state.exam_questions = random.sample(bank, question_count)
-            else:
-                combined = bank.copy()
-                dynamic_needed = question_count - len(combined)
-                combined.extend(generate_dynamic_questions(subject, dynamic_needed))
-                st.session_state.exam_questions = combined[:question_count]
-
+            st.session_state.exam_questions = create_exam(subject, question_count)
             st.session_state.exam_answers = {}
             st.session_state.exam_submitted = False
+            st.session_state.exam_subject = subject
 
     with c2:
         drive_items = get_drive_items_by_subject(subject)
@@ -923,14 +1090,16 @@ elif page == "📝 الاختبار الكبير":
         for idx, q in enumerate(exam_questions, start=1):
             with st.expander(f"السؤال رقم {idx}", expanded=False):
                 st.markdown(f"**{q['question']}**")
+                st.markdown("#### 🔑 الاختيارات")
                 render_option_legend(q)
+
                 labels = [format_option_label(k, v) for k, v in q["options"].items()]
                 answer = st.radio(
                     f"إجابة السؤال {idx}",
                     labels,
-                    key=f"exam_q_{idx}"
+                    key=f"exam_q_{subject}_{idx}"
                 )
-                st.session_state.exam_answers[idx] = answer.split("—")[0].strip()
+                st.session_state.exam_answers[idx] = answer.split("|")[0].strip()
 
         if st.button("📌 تسليم الاختبار"):
             st.session_state.exam_submitted = True
@@ -943,17 +1112,19 @@ elif page == "📝 الاختبار الكبير":
             for idx, q in enumerate(exam_questions, start=1):
                 user_ans = st.session_state.exam_answers.get(idx, "")
                 is_correct = user_ans == q["correct"]
+
                 if is_correct:
                     correct_count += 1
                     st.markdown(f"<div class='success-box'>السؤال {idx}: إجابة صحيحة ✅</div>", unsafe_allow_html=True)
                 else:
                     st.markdown(
-                        f"<div class='error-box'>السؤال {idx}: إجابة خاطئة ❌ | الصحيحة: {q['correct']} — {q['options'][q['correct']]}</div>",
+                        f"<div class='error-box'>السؤال {idx}: إجابة خاطئة ❌ | الصحيحة: {q['correct']} | {q['options'][q['correct']]}</div>",
                         unsafe_allow_html=True
                     )
 
                 st.markdown(f"**الشرح:** {q['explanation']}")
 
+                data.setdefault("history", [])
                 data["history"].append({
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "subject": subject,
@@ -963,10 +1134,15 @@ elif page == "📝 الاختبار الكبير":
                     "mode": "big_exam"
                 })
 
-            data["stats"]["questions_answered"] += total
-            data["stats"]["correct_answers"] += correct_count
-            data["stats"]["mock_exams_taken"] += 1
-            data["subject_progress"][subject] = min(100, data["subject_progress"].get(subject, 0) + max(5, correct_count * 2))
+            data.setdefault("stats", {})
+            data["stats"]["questions_answered"] = data["stats"].get("questions_answered", 0) + total
+            data["stats"]["correct_answers"] = data["stats"].get("correct_answers", 0) + correct_count
+            data["stats"]["mock_exams_taken"] = data["stats"].get("mock_exams_taken", 0) + 1
+
+            data.setdefault("subject_progress", {})
+            current_progress = data["subject_progress"].get(subject, 0)
+            data["subject_progress"][subject] = min(100, current_progress + max(5, correct_count * 2))
+
             save_data(data)
 
             score_percent = calc_percent(correct_count, total)
@@ -999,10 +1175,10 @@ elif page == "📺 أكاديمية الفيديو":
             </div>
             """, unsafe_allow_html=True)
 
-            if st.button(f"📺 فتح شروحات {subject}", key=f"video_{subject}"):
-                data["stats"]["video_clicks"] += 1
-                save_data(data)
-                st.link_button(f"الانتقال إلى شروحات {subject}", info["youtube"])
+            st.link_button(f"📺 فتح شروحات {subject}", info["youtube"])
+            if st.button(f"📌 تسجيل مشاهدة {subject}", key=f"video_track_{subject}"):
+                increment_stat("video_clicks", 1)
+                st.success("تم تسجيل المشاهدة.")
 
 # =========================================================
 # التحليلات
@@ -1010,8 +1186,8 @@ elif page == "📺 أكاديمية الفيديو":
 elif page == "📈 التحليلات":
     st.markdown('<div class="section-title">التحليلات ومؤشرات الأداء</div>', unsafe_allow_html=True)
 
-    total_q = data["stats"]["questions_answered"]
-    correct_q = data["stats"]["correct_answers"]
+    total_q = data.get("stats", {}).get("questions_answered", 0)
+    correct_q = data.get("stats", {}).get("correct_answers", 0)
     wrong_q = max(total_q - correct_q, 0)
     accuracy = get_accuracy()
 
@@ -1024,12 +1200,12 @@ elif page == "📈 التحليلات":
         metric_card("الدقة الكلية", f"{accuracy}%", "كلما ارتفعت الدقة زادت الجاهزية")
 
     progress_df = pd.DataFrame([
-        {"المادة": subject, "نسبة التقدم": data["subject_progress"].get(subject, 0)}
+        {"المادة": subject, "نسبة التقدم": data.get("subject_progress", {}).get(subject, 0)}
         for subject in SUBJECTS.keys()
     ])
     st.dataframe(progress_df, use_container_width=True, hide_index=True)
 
-    if data["history"]:
+    if data.get("history"):
         history_df = pd.DataFrame(data["history"])
         history_df = history_df.rename(columns={
             "time": "الوقت",
@@ -1061,9 +1237,11 @@ elif page == "⚙️ الإعدادات":
         st.success("تم حفظ الإعدادات بنجاح.")
 
     if st.button("🧹 إعادة ضبط السجل"):
+        old_name = data.get("student_name", "أدهم")
+        old_target = data.get("target_score", 95)
         new_data = default_student_data()
-        new_data["student_name"] = data.get("student_name", "أدهم")
-        new_data["target_score"] = data.get("target_score", 95)
+        new_data["student_name"] = old_name
+        new_data["target_score"] = old_target
         save_data(new_data)
         st.success("تمت إعادة الضبط. أعد تحميل الصفحة.")
 
@@ -1072,6 +1250,6 @@ elif page == "⚙️ الإعدادات":
 # =========================================================
 st.markdown("""
 <div class="footer-note">
-    حصن أدهم التعليمي — نسخة مطورة بمكتبة سحابية من Google Drive واختبارات مرنة ومفاتيح اختيارات أوضح بصريًا.
+    حصن أدهم التعليمي — النسخة النهائية الفاخرة بمفاتيح اختيارات بارزة وبيانات مؤمنة ومكتبة سحابية واختبارات مرنة.
 </div>
 """, unsafe_allow_html=True)
