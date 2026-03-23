@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import os
 import json
-import math
-import base64
 import random
+import re
 from pathlib import Path
 from datetime import datetime, date
 from typing import Dict, List, Any, Optional
@@ -14,21 +12,12 @@ import pandas as pd
 import streamlit as st
 
 # =========================================================
-# حصن أدهم التعليمي V100 - Ultra Imperial Fusion Edition
-# دمج احترافي للكودين + تطوير شامل + تحسين الاستقرار والفخامة
+# حصن أدهم التعليمي V101 - Google Drive Fusion Edition
 # =========================================================
 
 APP_TITLE = "حصن أدهم التعليمي"
-APP_VERSION = "V100"
+APP_VERSION = "V101"
 APP_ICON = "🏛️"
-
-BASE_DIR = Path(".")
-DATA_DIR = BASE_DIR / "hisn_adham_data"
-DATA_FILE = DATA_DIR / "student_data.json"
-SYLLABUS_DIR = BASE_DIR / "Syllabus"
-
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-SYLLABUS_DIR.mkdir(parents=True, exist_ok=True)
 
 st.set_page_config(
     page_title=f"{APP_TITLE} {APP_VERSION}",
@@ -38,251 +27,282 @@ st.set_page_config(
 )
 
 # =========================================================
-# CSS فخم جداً
+# مسارات آمنة
 # =========================================================
-def inject_global_css() -> None:
-    st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+BASE_DIR = Path(".")
 
-    html, body, [class*="st-"] {
-        font-family: 'Cairo', sans-serif !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }
+def ensure_directory(path: Path) -> Path:
+    if path.exists():
+        if path.is_dir():
+            return path
+        else:
+            st.error(f"يوجد عنصر باسم {path.name} لكنه ملف وليس مجلدًا. احذف الملف أو غيّر اسمه.")
+            st.stop()
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
-    .stApp {
-        background:
-            radial-gradient(circle at top right, rgba(255,215,0,0.08), transparent 20%),
-            radial-gradient(circle at top left, rgba(59,130,246,0.12), transparent 22%),
-            linear-gradient(180deg, #06101b 0%, #0a1522 45%, #0d1b2a 100%);
-        color: #eef2ff;
-    }
-
-    .main > div {
-        padding-top: 1.2rem;
-    }
-
-    div[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #08111b 0%, #101826 100%);
-        border-left: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .hero-box {
-        background: linear-gradient(135deg, rgba(12,19,32,0.98), rgba(24,34,52,0.95));
-        border: 1px solid rgba(255,215,0,0.18);
-        border-radius: 30px;
-        padding: 30px;
-        margin-bottom: 22px;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.38);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-box:before {
-        content: "";
-        position: absolute;
-        top: -60px;
-        left: -60px;
-        width: 160px;
-        height: 160px;
-        background: radial-gradient(circle, rgba(255,215,0,0.22), transparent 70%);
-        border-radius: 50%;
-    }
-
-    .hero-box:after {
-        content: "";
-        position: absolute;
-        bottom: -70px;
-        right: -70px;
-        width: 180px;
-        height: 180px;
-        background: radial-gradient(circle, rgba(59,130,246,0.20), transparent 70%);
-        border-radius: 50%;
-    }
-
-    .hero-title {
-        text-align: center;
-        color: #ffd700;
-        font-size: 2.2rem;
-        font-weight: 900;
-        margin-bottom: 8px;
-        position: relative;
-        z-index: 2;
-    }
-
-    .hero-sub {
-        text-align: center;
-        color: #dbeafe;
-        font-size: 1rem;
-        line-height: 2;
-        position: relative;
-        z-index: 2;
-    }
-
-    .section-title {
-        color: #ffe082;
-        font-size: 1.28rem;
-        font-weight: 900;
-        border-right: 5px solid #ffd700;
-        padding-right: 12px;
-        margin: 16px 0 14px 0;
-    }
-
-    .glass-card {
-        background: linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 22px;
-        padding: 18px;
-        margin-bottom: 14px;
-        box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-    }
-
-    .metric-card {
-        background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,255,255,0.03));
-        border: 1px solid rgba(255,215,0,0.16);
-        border-radius: 22px;
-        padding: 18px;
-        min-height: 130px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-    }
-
-    .metric-label {
-        color: #cbd5e1;
-        font-weight: 700;
-        font-size: 0.95rem;
-        margin-bottom: 10px;
-    }
-
-    .metric-value {
-        color: #ffffff;
-        font-weight: 900;
-        font-size: 1.95rem;
-        margin-bottom: 6px;
-    }
-
-    .metric-note {
-        color: #93c5fd;
-        font-size: 0.9rem;
-        font-weight: 600;
-        line-height: 1.7;
-    }
-
-    .subject-card {
-        background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,215,0,0.04));
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 22px;
-        padding: 18px;
-        margin-bottom: 14px;
-    }
-
-    .subject-title {
-        color: #fff3bf;
-        font-weight: 800;
-        font-size: 1.12rem;
-        margin-bottom: 8px;
-    }
-
-    .subject-meta {
-        color: #dbeafe;
-        line-height: 1.9;
-        font-size: 0.95rem;
-    }
-
-    .success-box {
-        background: rgba(34,197,94,0.12);
-        border: 1px solid rgba(34,197,94,0.35);
-        color: #dcfce7;
-        border-radius: 18px;
-        padding: 15px;
-        margin-top: 12px;
-        font-weight: 700;
-    }
-
-    .error-box {
-        background: rgba(239,68,68,0.12);
-        border: 1px solid rgba(239,68,68,0.35);
-        color: #fee2e2;
-        border-radius: 18px;
-        padding: 15px;
-        margin-top: 12px;
-        font-weight: 700;
-    }
-
-    .info-chip {
-        display: inline-block;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(255,215,0,0.10);
-        border: 1px solid rgba(255,215,0,0.18);
-        color: #ffe082;
-        font-size: 0.88rem;
-        font-weight: 700;
-        margin-left: 6px;
-        margin-bottom: 8px;
-    }
-
-    .small-note {
-        color: #cbd5e1;
-        line-height: 1.9;
-        font-size: 0.94rem;
-    }
-
-    .file-card {
-        background: linear-gradient(135deg, rgba(30,41,59,0.90), rgba(15,23,42,0.90));
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 18px;
-        padding: 16px;
-        margin-bottom: 10px;
-    }
-
-    .footer-note {
-        text-align: center;
-        color: #cbd5e1;
-        margin-top: 32px;
-        font-size: 0.9rem;
-        opacity: 0.92;
-    }
-
-    .stButton > button,
-    .stDownloadButton > button {
-        width: 100%;
-        min-height: 46px;
-        border-radius: 14px !important;
-        font-weight: 800 !important;
-    }
-
-    .stButton > button {
-        background: linear-gradient(135deg, #facc15, #ffd700) !important;
-        color: #111827 !important;
-        border: 1px solid rgba(255,215,0,0.28) !important;
-        box-shadow: 0 8px 20px rgba(250,204,21,0.22);
-    }
-
-    iframe {
-        border-radius: 20px !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-        background: white !important;
-    }
-
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #facc15, #38bdf8) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-inject_global_css()
+DATA_DIR = ensure_directory(BASE_DIR / "hisn_adham_data")
+DATA_FILE = DATA_DIR / "student_data.json"
 
 # =========================================================
-# استدعاء بنك الأسئلة الخارجي إن وجد
+# CSS إمبراطوري
 # =========================================================
-try:
-    from questions_bank import ST_QUESTIONS as EXTERNAL_QUESTION_BANK
-except Exception:
-    EXTERNAL_QUESTION_BANK = {}
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+
+html, body, [class*="st-"] {
+    font-family: 'Cairo', sans-serif !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.stApp {
+    background:
+        radial-gradient(circle at top right, rgba(255,215,0,0.08), transparent 20%),
+        radial-gradient(circle at top left, rgba(59,130,246,0.12), transparent 22%),
+        linear-gradient(180deg, #06101b 0%, #0a1522 45%, #0d1b2a 100%);
+    color: #eef2ff;
+}
+
+.main > div {
+    padding-top: 1rem;
+}
+
+div[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #08111b 0%, #101826 100%);
+    border-left: 1px solid rgba(255,255,255,0.06);
+}
+
+.hero-box {
+    background: linear-gradient(135deg, rgba(12,19,32,0.98), rgba(24,34,52,0.95));
+    border: 1px solid rgba(255,215,0,0.18);
+    border-radius: 30px;
+    padding: 30px;
+    margin-bottom: 22px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.38);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-title {
+    text-align: center;
+    color: #ffd700;
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.hero-sub {
+    text-align: center;
+    color: #dbeafe;
+    font-size: 1rem;
+    line-height: 2;
+}
+
+.section-title {
+    color: #ffe082;
+    font-size: 1.28rem;
+    font-weight: 900;
+    border-right: 5px solid #ffd700;
+    padding-right: 12px;
+    margin: 16px 0 14px 0;
+}
+
+.glass-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+}
+
+.metric-card {
+    background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,255,255,0.03));
+    border: 1px solid rgba(255,215,0,0.16);
+    border-radius: 22px;
+    padding: 18px;
+    min-height: 130px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+}
+
+.metric-label {
+    color: #cbd5e1;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+.metric-value {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1.95rem;
+    margin-bottom: 6px;
+}
+
+.metric-note {
+    color: #93c5fd;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+.subject-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,215,0,0.04));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
+
+.subject-title {
+    color: #fff3bf;
+    font-weight: 800;
+    font-size: 1.12rem;
+    margin-bottom: 8px;
+}
+
+.subject-meta {
+    color: #dbeafe;
+    line-height: 1.9;
+    font-size: 0.95rem;
+}
+
+.success-box {
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.35);
+    color: #dcfce7;
+    border-radius: 18px;
+    padding: 15px;
+    margin-top: 12px;
+    font-weight: 700;
+}
+
+.error-box {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.35);
+    color: #fee2e2;
+    border-radius: 18px;
+    padding: 15px;
+    margin-top: 12px;
+    font-weight: 700;
+}
+
+.info-chip {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(255,215,0,0.10);
+    border: 1px solid rgba(255,215,0,0.18);
+    color: #ffe082;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-left: 6px;
+    margin-bottom: 8px;
+}
+
+.small-note {
+    color: #cbd5e1;
+    line-height: 1.9;
+    font-size: 0.94rem;
+}
+
+.option-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffd700, #facc15);
+    color: #111827;
+    font-weight: 900;
+    font-size: 1.1rem;
+    margin-left: 10px;
+    box-shadow: 0 8px 18px rgba(250,204,21,0.25);
+    border: 1px solid rgba(255,215,0,0.35);
+}
+
+.option-row {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.drive-card {
+    background: linear-gradient(135deg, rgba(30,41,59,0.90), rgba(15,23,42,0.90));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
+
+.footer-note {
+    text-align: center;
+    color: #cbd5e1;
+    margin-top: 32px;
+    font-size: 0.9rem;
+    opacity: 0.92;
+}
+
+.stButton > button,
+.stDownloadButton > button {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 14px !important;
+    font-weight: 800 !important;
+}
+
+.stButton > button {
+    background: linear-gradient(135deg, #facc15, #ffd700) !important;
+    color: #111827 !important;
+    border: 1px solid rgba(255,215,0,0.28) !important;
+    box-shadow: 0 8px 20px rgba(250,204,21,0.22);
+}
+
+div[data-testid="stRadio"] label {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #facc15, #38bdf8) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
-# البيانات الأساسية
+# روابط Google Drive
+# مأخوذة من الكود المرفق الذي حول المكتبة إلى روابط Drive
+# =========================================================
+DRIVE_LINKS = {
+    "الرياضيات التطبيقية (1)": "https://drive.google.com/file/d/1xlzPmrUqCAR7XF4ZaBAFN6WhbvZum3_d/view",
+    "الرياضيات التطبيقية (2)": "https://drive.google.com/file/d/1BQec3wMImmlX-Y82Ll8ppgMFr6N3aQuP/view",
+    "الرياضيات البحتة (1)": "https://drive.google.com/file/d/1TqlGSQ7__r2er05lfqAi1B2kdIrspXui/view",
+    "الرياضيات البحتة (2)": "https://drive.google.com/file/d/1Om2_yLrF1btqqr73JOdpAVewL47-BuW8/view",
+    "الفيزياء (1)": "https://drive.google.com/file/d/1uo6ZDwqV0CeN9MatZRfk79N07crJ3Gxw/view",
+    "الفيزياء (2)": "https://drive.google.com/file/d/1Vn6PQyoyEgvLGf7QB-l75tg_phNIQNDq/view",
+    "الكيمياء (1)": "https://drive.google.com/file/d/1QjUZknxo9rp8GeeaB4S1OyzAHtDcbsfu/view",
+    "الكيمياء (2)": "https://drive.google.com/file/d/1LSmHETcXeYwA6qz-eyFX6ItZ6pXgvJ2m/view",
+    "اللغة العربية (1)": "https://drive.google.com/file/d/1IaVZdUUCtgE4cZ0jxOJ98tk9qdWZSlVV/view",
+    "اللغة العربية (2)": "https://drive.google.com/file/d/1WGrU1z6JWk_i22VRpP6OgeEiTrevw-bR/view",
+    "اللغة الإنجليزية (1)": "https://drive.google.com/file/d/1BOzbTTX9mtQY-tNI_u_qibQu9et6byAS/view",
+    "اللغة الإنجليزية (2)": "https://drive.google.com/file/d/1_K--sjkXTb_j3bWTn0fW2X8Il0UVvLAK/view",
+    "بنك الأسئلة الشامل": "https://drive.google.com/file/d/1Xp2lVzOcPXLh-BqRX9A6Xeku22KYwCVP/view"
+}
+
+# =========================================================
+# بيانات المواد
 # =========================================================
 SUBJECTS: Dict[str, Dict[str, Any]] = {
     "الفيزياء": {
@@ -319,94 +339,43 @@ SUBJECTS: Dict[str, Dict[str, Any]] = {
         "difficulty": "متوسط",
         "topics": ["النحو", "البلاغة", "الأدب", "النصوص", "القراءة"],
         "youtube": "https://www.youtube.com/results?search_query=لغة+عربية+ثانوية+عامة+شرح"
+    },
+    "اللغة الإنجليزية": {
+        "icon": "🌍",
+        "description": "Grammar - Reading - Vocabulary - Writing",
+        "difficulty": "متوسط",
+        "topics": ["Grammar", "Reading", "Vocabulary", "Writing"],
+        "youtube": "https://www.youtube.com/results?search_query=لغة+انجليزية+ثانوية+عامة+شرح"
     }
 }
 
+# =========================================================
+# بنك أسئلة داخلي احتياطي
+# =========================================================
 INTERNAL_QUESTION_BANK: Dict[str, List[Dict[str, Any]]] = {
     "الفيزياء": [
         {
             "question": "إذا زاد طول سلك معدني إلى الضعف وقلت مساحة مقطعه إلى النصف، فإن مقاومته:",
-            "options": {
-                "A": "تزداد إلى أربعة أمثالها",
-                "B": "تزداد إلى الضعف",
-                "C": "تقل إلى النصف",
-                "D": "تظل ثابتة"
-            },
+            "options": {"A": "تزداد إلى أربعة أمثالها", "B": "تزداد إلى الضعف", "C": "تقل إلى النصف", "D": "تظل ثابتة"},
             "correct": "A",
-            "answer": "A",
-            "explanation": """قانون المقاومة:
-R = ρL / A
-
-إذا أصبح:
-L = 2L
-A = A/2
-
-فإن:
-R الجديدة = ρ(2L) / (A/2) = 4ρL/A
-
-إذن المقاومة تزداد إلى أربعة أمثالها.""",
+            "explanation": "R = ρL / A، فإذا تضاعف الطول ونُصفت المساحة زادت المقاومة إلى أربعة أمثالها.",
             "topic": "قانون أوم",
             "difficulty": "متوسط"
         },
         {
-            "question": "مجموع فروق الجهد حول أي مسار مغلق في دائرة كهربية يساوي:",
-            "options": {
-                "A": "شدة التيار",
-                "B": "صفر",
-                "C": "المقاومة المكافئة",
-                "D": "القدرة الكهربية"
-            },
+            "question": "مجموع فروق الجهد حول أي مسار مغلق يساوي:",
+            "options": {"A": "شدة التيار", "B": "صفر", "C": "المقاومة المكافئة", "D": "القدرة"},
             "correct": "B",
-            "answer": "B",
-            "explanation": """طبقًا لقانون كيرشوف الثاني:
-المجموع الجبري لفروق الجهد في أي مسار مغلق = صفر.""",
+            "explanation": "طبقًا لقانون كيرشوف الثاني، المجموع الجبري لفروق الجهد في مسار مغلق يساوي صفرًا.",
             "topic": "قوانين كيرشوف",
-            "difficulty": "سهل"
-        },
-        {
-            "question": "إذا كانت القدرة 220 وات وفرق الجهد 110 فولت، فإن شدة التيار تساوي:",
-            "options": {
-                "A": "0.5 أمبير",
-                "B": "1 أمبير",
-                "C": "2 أمبير",
-                "D": "4 أمبير"
-            },
-            "correct": "C",
-            "answer": "C",
-            "explanation": """نستخدم العلاقة:
-P = V × I
-
-إذن:
-I = P / V = 220 / 110 = 2 أمبير""",
-            "topic": "القدرة",
             "difficulty": "سهل"
         }
     ],
     "الكيمياء": [
         {
-            "question": "أي من العمليات التالية تؤدي إلى زيادة نسبة الحديد في الخام عن طريق إزالة الشوائب؟",
-            "options": {
-                "A": "التركيز",
-                "B": "التكسير",
-                "C": "التلبيد",
-                "D": "التحميص"
-            },
-            "correct": "A",
-            "answer": "A",
-            "explanation": "عملية التركيز تهدف إلى رفع نسبة المادة المفيدة في الخام بإزالة الشوائب.",
-            "topic": "خام الحديد",
-            "difficulty": "سهل"
-        },
-        {
             "question": "العامل الحفاز يقوم بـ:",
-            "options": {
-                "A": "زيادة كمية النواتج",
-                "B": "تقليل طاقة التنشيط",
-                "C": "تغيير ثابت الاتزان",
-                "D": "إيقاف التفاعل"
-            },
+            "options": {"A": "زيادة كمية النواتج", "B": "تقليل طاقة التنشيط", "C": "تغيير ثابت الاتزان", "D": "إيقاف التفاعل"},
             "correct": "B",
-            "answer": "B",
             "explanation": "العامل الحفاز يقلل طاقة التنشيط فيزيد سرعة التفاعل دون تغيير ثابت الاتزان.",
             "topic": "سرعة التفاعل",
             "difficulty": "سهل"
@@ -415,85 +384,94 @@ I = P / V = 220 / 110 = 2 أمبير""",
     "الرياضيات البحتة": [
         {
             "question": "أنسب طريقة لحساب التكامل ∫ x e^x dx هي:",
-            "options": {
-                "A": "التعويض",
-                "B": "التكامل بالتجزئة",
-                "C": "الكسور الجزئية",
-                "D": "الطريقة البيانية"
-            },
+            "options": {"A": "التعويض", "B": "التكامل بالتجزئة", "C": "الكسور الجزئية", "D": "الطريقة البيانية"},
             "correct": "B",
-            "answer": "B",
-            "explanation": """عندما يكون التكامل حاصل ضرب دالتين، إحداهما جبرية والأخرى أسية،
-فالطريقة الأنسب غالبًا هي التكامل بالتجزئة.""",
+            "explanation": "عندما يكون التكامل حاصل ضرب دالة جبرية وأخرى أسية فالأنسب غالبًا التكامل بالتجزئة.",
             "topic": "التكامل",
             "difficulty": "متوسط"
-        },
-        {
-            "question": "النهاية lim (sin x / x) عندما x تؤول إلى الصفر تساوي:",
-            "options": {
-                "A": "0",
-                "B": "1",
-                "C": "∞",
-                "D": "-1"
-            },
-            "correct": "B",
-            "answer": "B",
-            "explanation": "من النهايات المشهورة: lim (sin x / x) = 1 عندما x → 0",
-            "topic": "النهايات",
-            "difficulty": "سهل"
         }
     ],
     "الرياضيات التطبيقية": [
         {
             "question": "العزم حول نقطة يساوي:",
-            "options": {
-                "A": "القوة ÷ الذراع",
-                "B": "القوة × ذراعها العمودي",
-                "C": "الكتلة × السرعة",
-                "D": "الضغط × المساحة"
-            },
+            "options": {"A": "القوة ÷ الذراع", "B": "القوة × ذراعها العمودي", "C": "الكتلة × السرعة", "D": "الضغط × المساحة"},
             "correct": "B",
-            "answer": "B",
-            "explanation": "العزم = القوة × ذراعها العمودي، وهو مقياس لقدرة القوة على إحداث دوران.",
+            "explanation": "العزم = القوة × ذراعها العمودي.",
             "topic": "العزوم",
             "difficulty": "سهل"
         }
     ],
     "اللغة العربية": [
         {
-            "question": "في قولنا: 'العلم نور'، الأسلوب البلاغي هو:",
-            "options": {
-                "A": "تشبيه بليغ",
-                "B": "استعارة مكنية",
-                "C": "كناية",
-                "D": "مجاز مرسل"
-            },
+            "question": "في قولنا: العلم نور، الأسلوب البلاغي هو:",
+            "options": {"A": "تشبيه بليغ", "B": "استعارة مكنية", "C": "كناية", "D": "مجاز مرسل"},
             "correct": "A",
-            "answer": "A",
-            "explanation": "العلم نور: تشبيه بليغ لأن أداة التشبيه ووجه الشبه محذوفان.",
+            "explanation": "تشبيه بليغ لأن أداة التشبيه ووجه الشبه محذوفان.",
             "topic": "البلاغة",
             "difficulty": "متوسط"
+        }
+    ],
+    "اللغة الإنجليزية": [
+        {
+            "question": "Choose the correct sentence:",
+            "options": {"A": "He go to school", "B": "He goes to school", "C": "He going to school", "D": "He gone to school"},
+            "correct": "B",
+            "explanation": "With he/she/it in the present simple, the verb usually takes s/es.",
+            "topic": "Grammar",
+            "difficulty": "سهل"
         }
     ]
 }
 
-DAILY_TASKS = [
-    "حل 15 سؤالًا في المادة الأضعف لديك.",
-    "مراجعة قانونين أو قاعدتين وكتابتهما بخط اليد.",
-    "مراجعة ملف PDF واحد لمدة 25 دقيقة.",
-    "مشاهدة شرح مركز لمدة 30 دقيقة ثم تلخيصه.",
-    "إعادة حل سؤالين أخطأت فيهما سابقًا.",
-    "اختبار سريع من 5 أسئلة لتثبيت الفهم."
-]
+# =========================================================
+# استدعاء بنك خارجي إن وجد
+# =========================================================
+try:
+    from questions_bank import ST_QUESTIONS as EXTERNAL_QUESTION_BANK
+except Exception:
+    EXTERNAL_QUESTION_BANK = {}
 
 # =========================================================
-# أدوات توحيد بنك الأسئلة
+# مولد أسئلة ديناميكي مستوحى من الكود المرفق
+# =========================================================
+def generate_dynamic_questions(subject: str, count: int = 40) -> List[Dict[str, Any]]:
+    topic_map = {
+        "الفيزياء": ["قانون أوم", "كيرشوف", "الحث المغناطيسي", "الفيزياء الحديثة"],
+        "الكيمياء": ["العناصر الانتقالية", "التحليل الكيميائي", "الكيمياء العضوية", "الاتزان الكيميائي"],
+        "الرياضيات البحتة": ["التفاضل", "التكامل", "النهايات", "الجبر"],
+        "الرياضيات التطبيقية": ["الاستاتيكا", "الديناميكا", "العزوم", "الاحتكاك"],
+        "اللغة العربية": ["النحو", "البلاغة", "الأدب", "النصوص"],
+        "اللغة الإنجليزية": ["Grammar", "Reading", "Vocabulary", "Writing"]
+    }
+
+    current_topics = topic_map.get(subject, ["عام"])
+    generated = []
+
+    for i in range(1, count + 1):
+        topic = random.choice(current_topics)
+        generated.append({
+            "question": f"سؤال تدريبي متقدم في {topic}: ما النتيجة الأقرب للصواب في الحالة التطبيقية رقم {i}؟",
+            "options": {
+                "A": "تزداد للضعف",
+                "B": "تقل للنصف",
+                "C": "تظل ثابتة",
+                "D": "يعتمد ذلك على المعطيات"
+            },
+            "correct": "D" if i % 4 == 0 else "A",
+            "explanation": f"الشرح الإرشادي: راجع موضوع {topic} جيدًا وحدد أثر تغيّر المعطيات على النتيجة النهائية.",
+            "topic": topic,
+            "difficulty": "متوسط"
+        })
+    return generated
+
+# =========================================================
+# توحيد صيغة الأسئلة
 # =========================================================
 def normalize_question_item(item: Dict[str, Any], fallback_subject: str = "") -> Optional[Dict[str, Any]]:
     if not isinstance(item, dict):
         return None
 
-    question_text = item.get("question", "").strip()
+    question_text = str(item.get("question", "")).strip()
     if not question_text:
         return None
 
@@ -513,29 +491,16 @@ def normalize_question_item(item: Dict[str, Any], fallback_subject: str = "") ->
         return None
 
     correct = str(item.get("correct", item.get("answer", ""))).strip()
-    if correct in normalized_options:
-        correct_key = correct
-    else:
-        correct_key = ""
-        for key, val in normalized_options.items():
-            if str(val).strip() == str(item.get("answer", "")).strip():
-                correct_key = key
-                break
-        if not correct_key:
-            correct_key = list(normalized_options.keys())[0]
-
-    explanation = str(item.get("explanation", "لا يوجد شرح متاح حالياً.")).strip()
-    topic = str(item.get("topic", fallback_subject or "عام")).strip()
-    difficulty = str(item.get("difficulty", "متوسط")).strip()
+    if correct not in normalized_options:
+        correct = "A"
 
     return {
         "question": question_text,
         "options": normalized_options,
-        "correct": correct_key,
-        "answer": correct_key,
-        "explanation": explanation,
-        "topic": topic,
-        "difficulty": difficulty
+        "correct": correct,
+        "explanation": str(item.get("explanation", item.get("hint", "لا يوجد شرح متاح حالياً."))).strip(),
+        "topic": str(item.get("topic", fallback_subject or "عام")).strip(),
+        "difficulty": str(item.get("difficulty", "متوسط")).strip()
     }
 
 def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
@@ -552,7 +517,23 @@ def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
                 normalized = normalize_question_item(item, fallback_subject=subject)
                 if normalized:
                     sig = (
-                        normalized["question"].strip(),
+                        normalized["question"],
+                        tuple(normalized["options"].items()),
+                        normalized["correct"]
+                    )
+                    if sig not in seen:
+                        seen.add(sig)
+                        collected.append(normalized)
+
+        # إضافة أسئلة مولدة تلقائيًا لو المادة عددها قليل
+        if len(collected) < 12:
+            dynamic_needed = 12 - len(collected)
+            dynamic_items = generate_dynamic_questions(subject, dynamic_needed)
+            for item in dynamic_items:
+                normalized = normalize_question_item(item, fallback_subject=subject)
+                if normalized:
+                    sig = (
+                        normalized["question"],
                         tuple(normalized["options"].items()),
                         normalized["correct"]
                     )
@@ -568,7 +549,7 @@ def merge_question_banks() -> Dict[str, List[Dict[str, Any]]]:
 QUESTION_BANK = merge_question_banks()
 
 # =========================================================
-# التخزين المحلي
+# تخزين البيانات
 # =========================================================
 def default_student_data() -> Dict[str, Any]:
     return {
@@ -578,7 +559,7 @@ def default_student_data() -> Dict[str, Any]:
         "stats": {
             "questions_answered": 0,
             "correct_answers": 0,
-            "pdf_opened": 0,
+            "drive_opened": 0,
             "video_clicks": 0,
             "mock_exams_taken": 0
         },
@@ -612,32 +593,34 @@ data = load_data()
 # =========================================================
 # Session State
 # =========================================================
-SESSION_DEFAULTS = {
+defaults = {
     "current_question": None,
     "question_result": None,
     "exam_questions": [],
     "exam_answers": {},
-    "exam_submitted": False,
-    "last_subject_selected": None
+    "exam_submitted": False
 }
-
-for key, value in SESSION_DEFAULTS.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
 # =========================================================
 # أدوات مساعدة
 # =========================================================
 def calc_percent(part: int, total: int) -> float:
-    if total <= 0:
-        return 0.0
-    return round((part / total) * 100, 1)
+    return round((part / total) * 100, 1) if total else 0.0
 
 def get_accuracy() -> float:
-    return calc_percent(
-        data["stats"].get("correct_answers", 0),
-        data["stats"].get("questions_answered", 0)
-    )
+    return calc_percent(data["stats"].get("correct_answers", 0), data["stats"].get("questions_answered", 0))
+
+def metric_card(label: str, value: str, note: str) -> None:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+        <div class="metric-note">{note}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def get_status_label() -> str:
     answered = data["stats"].get("questions_answered", 0)
@@ -654,53 +637,18 @@ def get_status_label() -> str:
         return "يحتاج صقل"
     return "خطة إنقاذ"
 
-def metric_card(label: str, value: str, note: str) -> None:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">{label}</div>
-        <div class="metric-value">{value}</div>
-        <div class="metric-note">{note}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_pdf(file_path: Path, height: int = 950) -> None:
-    try:
-        with open(file_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf-8")
-        pdf_html = f"""
-        <iframe
-            src="data:application/pdf;base64,{encoded}"
-            width="100%"
-            height="{height}"
-            type="application/pdf">
-        </iframe>
-        """
-        st.markdown(pdf_html, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"تعذر عرض ملف PDF: {e}")
-
-def list_pdf_files() -> List[Path]:
-    return sorted([p for p in SYLLABUS_DIR.glob("*.pdf") if p.is_file()], key=lambda x: x.name.lower())
-
-def generate_random_question(subject: str) -> Optional[Dict[str, Any]]:
-    bank = QUESTION_BANK.get(subject, [])
-    if not bank:
-        return None
-    return random.choice(bank)
-
-def award_achievement(title: str) -> None:
-    if title not in data["achievements"]:
-        data["achievements"].append(title)
+def add_favorite(name: str) -> None:
+    if name not in data["favorites"]:
+        data["favorites"].append(name)
         save_data(data)
 
-def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str) -> None:
+def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str, mode: str = "single_question") -> None:
     data["stats"]["questions_answered"] += 1
     if correct:
         data["stats"]["correct_answers"] += 1
 
-    current_progress = data["subject_progress"].get(subject, 0)
-    increase = 6 if correct else 2
-    data["subject_progress"][subject] = min(100, current_progress + increase)
+    progress = data["subject_progress"].get(subject, 0)
+    data["subject_progress"][subject] = min(100, progress + (6 if correct else 2))
 
     data["history"].append({
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -708,24 +656,11 @@ def update_after_answer(subject: str, correct: bool, topic: str, difficulty: str
         "topic": topic,
         "difficulty": difficulty,
         "correct": correct,
-        "mode": "single_question"
+        "mode": mode
     })
-
-    total = data["stats"]["questions_answered"]
-    correct_count = data["stats"]["correct_answers"]
-
-    if total >= 10:
-        award_achievement("🏅 أول 10 إجابات")
-    if correct_count >= 25:
-        award_achievement("👑 25 إجابة صحيحة")
-    if get_accuracy() >= 85 and total >= 10:
-        award_achievement("🔥 دقة أعلى من 85%")
-    if total >= 50:
-        award_achievement("🚀 محارب الأسئلة - 50 سؤالاً")
-
     save_data(data)
 
-def create_mock_exam(subject: str, num_questions: int = 5) -> List[Dict[str, Any]]:
+def create_exam(subject: str, num_questions: int = 10) -> List[Dict[str, Any]]:
     bank = QUESTION_BANK.get(subject, [])
     if not bank:
         return []
@@ -733,41 +668,27 @@ def create_mock_exam(subject: str, num_questions: int = 5) -> List[Dict[str, Any
         return random.sample(bank, num_questions)
     return [random.choice(bank) for _ in range(num_questions)]
 
-def today_task() -> str:
-    return DAILY_TASKS[date.today().day % len(DAILY_TASKS)]
+def format_option_label(key: str, text: str) -> str:
+    plain_text = re.sub(r"\s+", " ", text).strip()
+    return f"{key} — {plain_text}"
 
-def performance_message() -> str:
-    answered = data["stats"].get("questions_answered", 0)
-    acc = get_accuracy()
-    if answered == 0:
-        return "ابدأ أول اختبار الآن لتظهر مؤشرات الأداء الذكية."
-    if acc >= 85:
-        return "أداءك ممتاز جدًا، استمر بنفس النسق."
-    if acc >= 70:
-        return "مستواك قوي، لكن ما زال هناك هامش للتطوير."
-    if acc >= 50:
-        return "أنت على الطريق الصحيح لكن تحتاج تقليل الأخطاء."
-    return "ابدأ بالمراجعة الأساسية ثم عد للاختبار."
+def render_option_legend(q: Dict[str, Any]) -> None:
+    html = ""
+    for key, val in q["options"].items():
+        html += f"""
+        <div class="option-row">
+            <span class="option-key">{key}</span>
+            <span>{val}</span>
+        </div>
+        """
+    st.markdown(html, unsafe_allow_html=True)
 
-def get_weakest_subject() -> str:
-    progress = data.get("subject_progress", {})
-    if not progress:
-        return "غير محدد"
-    return min(progress, key=progress.get)
-
-def get_best_subject() -> str:
-    progress = data.get("subject_progress", {})
-    if not progress:
-        return "غير محدد"
-    return max(progress, key=progress.get)
-
-def add_favorite_file(file_name: str) -> None:
-    if file_name not in data["favorites"]:
-        data["favorites"].append(file_name)
-        save_data(data)
-
-def format_size_kb(path: Path) -> str:
-    return f"{round(path.stat().st_size / 1024, 2)} كيلوبايت"
+def get_drive_items_by_subject(subject: str) -> List[tuple]:
+    result = []
+    for title, link in DRIVE_LINKS.items():
+        if subject in title or (subject == "الرياضيات البحتة" and "الرياضيات البحتة" in title) or (subject == "الرياضيات التطبيقية" and "الرياضيات التطبيقية" in title):
+            result.append((title, link))
+    return result
 
 # =========================================================
 # Header
@@ -776,9 +697,9 @@ st.markdown(f"""
 <div class="hero-box">
     <div class="hero-title">🏛️ {APP_TITLE} — {APP_VERSION}</div>
     <div class="hero-sub">
-        منصة تعليمية عربية احترافية فائقة الفخامة للثانوية العامة:
-        مكتبة PDF ذكية، بنك أسئلة تفاعلي، اختبارات تجريبية، تحليلات أداء، خطة يومية، وتتبع تقدّم كامل
-        في واجهة إمبراطورية راقية تجمع بين قوة الكودين في نسخة واحدة متكاملة.
+        منصة تعليمية عربية احترافية بواجهة ملكية:
+        مكتبة سحابية عبر Google Drive، بنك أسئلة تفاعلي، اختبارات كبيرة بعدد أسئلة مرن،
+        وتحليلات أداء كاملة مع تصميم أقوى لمفاتيح الاختيارات.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -788,29 +709,23 @@ st.markdown(f"""
 # =========================================================
 with st.sidebar:
     st.markdown("## 🎛️ لوحة التحكم الإمبراطورية")
-
     page = st.radio(
         "اختر القسم:",
         [
             "🏠 الرئيسية",
-            "📚 المكتبة الرقمية",
+            "☁️ المكتبة السحابية",
             "🧠 بنك الأسئلة التفاعلي",
-            "📝 الاختبار التجريبي",
+            "📝 الاختبار الكبير",
             "📺 أكاديمية الفيديو",
             "📈 التحليلات",
-            "🎯 الخطة اليومية",
             "⚙️ الإعدادات"
         ]
     )
-
     st.markdown("---")
     st.markdown(f"**الطالب:** {data.get('student_name', 'أدهم')}")
     st.markdown(f"**الحالة:** {get_status_label()}")
     st.markdown(f"**الهدف:** {data.get('target_score', 95)}%")
-    st.markdown(f"**أضعف مادة:** {get_weakest_subject()}")
-    st.markdown("---")
-    st.info("💡 نصيحة القمة: لا تكتفِ بقراءة الدرس، بل اختبر نفسك فيه فورًا.")
-    st.caption("ضع ملفات PDF داخل مجلد Syllabus لتظهر تلقائيًا داخل المكتبة.")
+    st.info("💡 كل ملف أصبح يفتح من Google Drive بدل الاعتماد على ملف داخلي.")
 
 # =========================================================
 # الرئيسية
@@ -824,126 +739,73 @@ if page == "🏠 الرئيسية":
     with c2:
         metric_card("نسبة الدقة", f"{get_accuracy()}%", "معدل الإجابات الصحيحة")
     with c3:
-        metric_card("فتح ملفات PDF", str(data["stats"]["pdf_opened"]), "تفاعل المكتبة الرقمية")
+        metric_card("روابط Drive المفتوحة", str(data["stats"]["drive_opened"]), "تفاعل المكتبة السحابية")
     with c4:
-        metric_card("الاختبارات التجريبية", str(data["stats"]["mock_exams_taken"]), "عدد الاختبارات المكتملة")
+        metric_card("الاختبارات الكبرى", str(data["stats"]["mock_exams_taken"]), "اختبارات مكتملة")
 
     st.markdown('<div class="section-title">المواد الدراسية</div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-
-    subjects_to_show = list(SUBJECTS.items())
-    for i, (subject, info) in enumerate(subjects_to_show):
+    for i, (subject, info) in enumerate(SUBJECTS.items()):
         with [col1, col2][i % 2]:
             progress = data["subject_progress"].get(subject, 0)
-            question_count = len(QUESTION_BANK.get(subject, []))
             st.markdown(f"""
             <div class="subject-card">
                 <div class="subject-title">{info['icon']} {subject}</div>
                 <div class="subject-meta">
                     الوصف: {info['description']}<br>
                     مستوى الصعوبة: {info['difficulty']}<br>
-                    عدد الأسئلة المتاحة: {question_count}<br>
+                    عدد الأسئلة المتاحة: {len(QUESTION_BANK.get(subject, []))}<br>
+                    عدد ملفات Drive: {len(get_drive_items_by_subject(subject))}<br>
                     التقدم الحالي: {progress}%
                 </div>
             </div>
             """, unsafe_allow_html=True)
             st.progress(progress / 100)
 
-    st.markdown('<div class="section-title">مهمة اليوم</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="glass-card">
-        <span class="info-chip">الخطة اليومية</span>
-        <span class="info-chip">أفضل مادة لديك: {get_best_subject()}</span>
-        <span class="info-chip">المادة التي تحتاج دعمًا: {get_weakest_subject()}</span>
-        <div class="small-note">{today_task()}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="section-title">الإنجازات</div>', unsafe_allow_html=True)
-    if data["achievements"]:
-        cols = st.columns(2)
-        for i, ach in enumerate(data["achievements"]):
-            with cols[i % 2]:
-                st.markdown(f"<div class='glass-card'>{ach}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown("<div class='glass-card'>ابدأ الحل الآن لفتح أول إنجاز لك.</div>", unsafe_allow_html=True)
-
-    if data.get("favorites"):
-        st.markdown('<div class="section-title">الملفات المفضلة</div>', unsafe_allow_html=True)
-        for fav in data["favorites"][-5:][::-1]:
-            st.markdown(f"<div class='glass-card'>⭐ {fav}</div>", unsafe_allow_html=True)
-
 # =========================================================
-# المكتبة الرقمية
+# المكتبة السحابية
 # =========================================================
-elif page == "📚 المكتبة الرقمية":
-    st.markdown('<div class="section-title">المكتبة الرقمية للكتب والمذكرات والملخصات</div>', unsafe_allow_html=True)
+elif page == "☁️ المكتبة السحابية":
+    st.markdown('<div class="section-title">المكتبة السحابية عبر Google Drive</div>', unsafe_allow_html=True)
 
-    pdf_files = list_pdf_files()
+    subject_filter = st.selectbox("فلترة حسب المادة:", ["الكل"] + list(SUBJECTS.keys()))
+    items = list(DRIVE_LINKS.items())
 
-    if not pdf_files:
-        st.warning("لا توجد ملفات PDF داخل مجلد Syllabus حالياً.")
-        st.info("أنشئ مجلدًا باسم Syllabus وضع بداخله الكتب أو الملخصات أو المراجعات النهائية.")
+    if subject_filter != "الكل":
+        items = [(title, link) for title, link in items if subject_filter in title]
+
+    if not items:
+        st.warning("لا توجد ملفات مطابقة لهذه المادة حالياً.")
     else:
-        search_term = st.text_input("🔎 ابحث عن ملف", placeholder="اكتب اسم الكتاب أو جزءًا منه")
-        filtered = [
-            p for p in pdf_files
-            if search_term.strip().lower() in p.name.lower()
-        ] if search_term.strip() else pdf_files
+        selected_name = st.selectbox("اختر الملف:", [x[0] for x in items])
+        selected_link = dict(items)[selected_name]
 
-        if not filtered:
-            st.error("لا توجد نتائج مطابقة لبحثك.")
-        else:
-            file_names = [p.name for p in filtered]
-            selected_name = st.selectbox("اختر الملف:", file_names)
-            selected_path = next(p for p in filtered if p.name == selected_name)
+        st.markdown(f"""
+        <div class="drive-card">
+            <div class="subject-title">📂 {selected_name}</div>
+            <div class="small-note">الملف متاح الآن عبر Google Drive ويمكن فتحه في صفحة مستقلة لسرعة أفضل على الهاتف.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-            left, right = st.columns([1.2, 1])
-            with left:
-                st.markdown(f"""
-                <div class="file-card">
-                    <div class="subject-title">📘 {selected_path.name}</div>
-                    <div class="small-note">
-                        الحجم: {format_size_kb(selected_path)}<br>
-                        المسار: {selected_path.parent}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🚀 فتح الملف الآن"):
+                data["stats"]["drive_opened"] += 1
+                save_data(data)
+                st.link_button("اضغط هنا للانتقال إلى الملف", selected_link)
+        with c2:
+            if st.button("⭐ إضافة للمفضلة", key=f"fav_{selected_name}"):
+                add_favorite(selected_name)
+                st.success("تمت إضافة الملف إلى المفضلة.")
 
-            with right:
-                with open(selected_path, "rb") as f:
-                    file_bytes = f.read()
-
-                st.download_button(
-                    "📥 تحميل الملف",
-                    data=file_bytes,
-                    file_name=selected_path.name,
-                    mime="application/pdf"
-                )
-
-                c1, c2 = st.columns(2)
-                with c1:
-                    if st.button("📖 تسجيل فتح الملف"):
-                        data["stats"]["pdf_opened"] += 1
-                        save_data(data)
-                        st.success("تم تسجيل فتح الملف.")
-                with c2:
-                    if st.button("⭐ إضافة للمفضلة"):
-                        add_favorite_file(selected_path.name)
-                        st.success("تمت الإضافة إلى المفضلة.")
-
-            st.markdown("### 👁️ عرض الملف")
-            render_pdf(selected_path, height=980)
-
-            st.markdown("### 📚 جميع الملفات المتاحة")
-            for p in filtered:
-                st.markdown(f"""
-                <div class="glass-card">
-                    <span class="info-chip">PDF</span>
-                    <span class="info-chip">{format_size_kb(p)}</span>
-                    <div class="small-note">{p.name}</div>
-                </div>
-                """, unsafe_allow_html=True)
+        st.markdown("### 📚 جميع الملفات المتاحة")
+        for title, link in items:
+            st.markdown(f"""
+            <div class="glass-card">
+                <span class="info-chip">Google Drive</span>
+                <div class="small-note">{title}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
 # =========================================================
 # بنك الأسئلة التفاعلي
@@ -952,174 +814,175 @@ elif page == "🧠 بنك الأسئلة التفاعلي":
     st.markdown('<div class="section-title">بنك الأسئلة التفاعلي الذكي</div>', unsafe_allow_html=True)
 
     available_subjects = [s for s in SUBJECTS.keys() if QUESTION_BANK.get(s)]
-    if not available_subjects:
-        st.error("لا يوجد بنك أسئلة متاح حالياً. يمكنك إضافة ملف questions_bank.py أو الاعتماد على البنك الداخلي.")
-    else:
-        subject = st.selectbox("اختر المادة:", available_subjects)
-        info = SUBJECTS.get(subject, {"difficulty": "متوسط", "topics": []})
+    subject = st.selectbox("اختر المادة:", available_subjects)
 
+    col_a, col_b = st.columns([1, 1])
+    with col_a:
+        if st.button("🎯 توليد سؤال جديد"):
+            st.session_state.current_question = random.choice(QUESTION_BANK[subject])
+            st.session_state.question_result = None
+    with col_b:
+        drive_items = get_drive_items_by_subject(subject)
+        if drive_items:
+            st.link_button("📘 افتح مرجع Drive للمادة", drive_items[0][1])
+
+    q = st.session_state.current_question
+    if q:
         st.markdown(f"""
         <div class="glass-card">
-            <span class="info-chip">المادة: {subject}</span>
-            <span class="info-chip">الصعوبة العامة: {info['difficulty']}</span>
-            <span class="info-chip">عدد الأسئلة: {len(QUESTION_BANK.get(subject, []))}</span>
+            <div class="subject-title">❓ السؤال</div>
+            <div class="small-note" style="font-size:1rem;color:#f8fafc;">{q['question']}</div>
+            <div class="small-note" style="margin-top:10px;">
+                الموضوع: {q['topic']} | المستوى: {q['difficulty']}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("🎯 توليد سؤال جديد"):
-            st.session_state.current_question = generate_random_question(subject)
-            st.session_state.question_result = None
+        st.markdown("### 🔑 مفتاح الاختيارات")
+        render_option_legend(q)
 
-        q = st.session_state.current_question
+        user_choice = st.radio(
+            "اختر الإجابة:",
+            [format_option_label(k, v) for k, v in q["options"].items()],
+            key="single_question_answer"
+        )
 
-        if q:
-            st.markdown(f"""
-            <div class="glass-card">
-                <div class="subject-title">❓ السؤال</div>
-                <div class="small-note" style="font-size:1rem;color:#f8fafc;">{q['question']}</div>
-                <div class="small-note" style="margin-top:10px;">
-                    الموضوع: {q['topic']} | المستوى: {q['difficulty']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        if st.button("✅ تأكيد الإجابة"):
+            selected_key = user_choice.split("—")[0].strip()
+            is_correct = selected_key == q["correct"]
 
-            options_labels = [f"{key}) {value}" for key, value in q["options"].items()]
-            user_choice = st.radio("اختر الإجابة:", options_labels, key="single_question_answer")
+            st.session_state.question_result = {
+                "correct": is_correct,
+                "correct_key": q["correct"],
+                "correct_text": q["options"].get(q["correct"], ""),
+                "explanation": q["explanation"]
+            }
 
-            if st.button("✅ تأكيد الإجابة"):
-                selected_key = user_choice.split(")")[0].strip()
-                is_correct = selected_key == q["correct"]
+            update_after_answer(subject, is_correct, q["topic"], q["difficulty"], mode="single_question")
 
-                st.session_state.question_result = {
-                    "correct": is_correct,
-                    "correct_key": q["correct"],
-                    "correct_text": q["options"].get(q["correct"], ""),
-                    "explanation": q["explanation"]
-                }
-
-                update_after_answer(subject, is_correct, q["topic"], q["difficulty"])
-
-        if st.session_state.question_result:
-            res = st.session_state.question_result
-            if res["correct"]:
-                st.markdown("<div class='success-box'>✅ إجابة صحيحة — أداء ممتاز جدًا.</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    f"<div class='error-box'>❌ إجابة غير صحيحة — الإجابة الصحيحة هي: {res['correct_key']}) {res['correct_text']}</div>",
-                    unsafe_allow_html=True
-                )
-
-            st.markdown("### ✍️ شرح الإجابة")
-            st.markdown(res["explanation"])
+    if st.session_state.question_result:
+        res = st.session_state.question_result
+        if res["correct"]:
+            st.markdown("<div class='success-box'>✅ إجابة صحيحة — أداء ممتاز جدًا.</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(
+                f"<div class='error-box'>❌ إجابة غير صحيحة — الصحيحة: {res['correct_key']} — {res['correct_text']}</div>",
+                unsafe_allow_html=True
+            )
+        st.markdown("### ✍️ شرح الإجابة")
+        st.markdown(res["explanation"])
 
 # =========================================================
-# الاختبار التجريبي
+# الاختبار الكبير
 # =========================================================
-elif page == "📝 الاختبار التجريبي":
-    st.markdown('<div class="section-title">الاختبار التجريبي المصغر</div>', unsafe_allow_html=True)
+elif page == "📝 الاختبار الكبير":
+    st.markdown('<div class="section-title">الاختبار الكبير بعدد أسئلة مرن</div>', unsafe_allow_html=True)
 
     available_subjects = [s for s in SUBJECTS.keys() if QUESTION_BANK.get(s)]
-    if not available_subjects:
-        st.error("لا توجد أسئلة كافية لإنشاء اختبار تجريبي.")
-    else:
-        subject = st.selectbox("اختر مادة الاختبار:", available_subjects, key="exam_subject")
-        max_q = max(3, min(10, len(QUESTION_BANK.get(subject, [])))) if QUESTION_BANK.get(subject) else 3
-        q_count = st.slider("عدد الأسئلة", min_value=3, max_value=max_q, value=min(5, max_q))
+    subject = st.selectbox("اختر مادة الاختبار:", available_subjects, key="exam_subject")
 
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🚀 إنشاء اختبار جديد"):
-                st.session_state.exam_questions = create_mock_exam(subject, q_count)
-                st.session_state.exam_answers = {}
-                st.session_state.exam_submitted = False
+    question_count = st.slider(
+        "عدد الأسئلة",
+        min_value=5,
+        max_value=40,
+        value=20,
+        step=5
+    )
 
-        with c2:
-            st.markdown(f"""
-            <div class="glass-card">
-                <div class="small-note">{SUBJECTS[subject]['description']}</div>
-            </div>
-            """, unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🚀 إنشاء اختبار جديد"):
+            # لو العدد كبير جدًا نولّد مزيجًا من البنك + أسئلة ديناميكية
+            bank = QUESTION_BANK.get(subject, [])
+            if len(bank) >= question_count:
+                st.session_state.exam_questions = random.sample(bank, question_count)
+            else:
+                combined = bank.copy()
+                dynamic_needed = question_count - len(combined)
+                combined.extend(generate_dynamic_questions(subject, dynamic_needed))
+                st.session_state.exam_questions = combined[:question_count]
 
-        exam_questions = st.session_state.exam_questions
+            st.session_state.exam_answers = {}
+            st.session_state.exam_submitted = False
 
-        if exam_questions:
-            for idx, q in enumerate(exam_questions, start=1):
-                st.markdown(f"""
-                <div class="glass-card">
-                    <div class="subject-title">السؤال {idx}</div>
-                    <div class="small-note">{q['question']}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    with c2:
+        drive_items = get_drive_items_by_subject(subject)
+        if drive_items:
+            st.link_button("📘 مرجع المادة على Drive", drive_items[0][1])
 
-                labels = [f"{k}) {v}" for k, v in q["options"].items()]
+    exam_questions = st.session_state.exam_questions
+
+    if exam_questions:
+        st.markdown(f"""
+        <div class="glass-card">
+            <div class="subject-title">🧠 اختبار {subject}</div>
+            <div class="small-note">عدد الأسئلة الحالي: {len(exam_questions)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for idx, q in enumerate(exam_questions, start=1):
+            with st.expander(f"السؤال رقم {idx}", expanded=False):
+                st.markdown(f"**{q['question']}**")
+                render_option_legend(q)
+                labels = [format_option_label(k, v) for k, v in q["options"].items()]
                 answer = st.radio(
                     f"إجابة السؤال {idx}",
                     labels,
                     key=f"exam_q_{idx}"
                 )
-                st.session_state.exam_answers[idx] = answer.split(")")[0].strip()
+                st.session_state.exam_answers[idx] = answer.split("—")[0].strip()
 
-            if st.button("📌 تسليم الاختبار"):
-                st.session_state.exam_submitted = True
+        if st.button("📌 تسليم الاختبار"):
+            st.session_state.exam_submitted = True
 
-            if st.session_state.exam_submitted:
-                total = len(exam_questions)
-                correct_count = 0
+        if st.session_state.exam_submitted:
+            total = len(exam_questions)
+            correct_count = 0
 
-                st.markdown("### 📋 النتيجة التفصيلية")
-                for idx, q in enumerate(exam_questions, start=1):
-                    user_ans = st.session_state.exam_answers.get(idx, "")
-                    is_correct = user_ans == q["correct"]
-                    if is_correct:
-                        correct_count += 1
-                        st.markdown(
-                            f"<div class='success-box'>السؤال {idx}: إجابة صحيحة ✅</div>",
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        st.markdown(
-                            f"<div class='error-box'>السؤال {idx}: إجابة خاطئة ❌ | الصحيحة: {q['correct']}) {q['options'][q['correct']]}</div>",
-                            unsafe_allow_html=True
-                        )
+            st.markdown("### 📋 النتيجة التفصيلية")
+            for idx, q in enumerate(exam_questions, start=1):
+                user_ans = st.session_state.exam_answers.get(idx, "")
+                is_correct = user_ans == q["correct"]
+                if is_correct:
+                    correct_count += 1
+                    st.markdown(f"<div class='success-box'>السؤال {idx}: إجابة صحيحة ✅</div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(
+                        f"<div class='error-box'>السؤال {idx}: إجابة خاطئة ❌ | الصحيحة: {q['correct']} — {q['options'][q['correct']]}</div>",
+                        unsafe_allow_html=True
+                    )
 
-                    st.markdown(f"**الشرح المختصر للسؤال {idx}:**")
-                    st.markdown(q["explanation"])
+                st.markdown(f"**الشرح:** {q['explanation']}")
 
-                    data["history"].append({
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "subject": subject,
-                        "topic": q["topic"],
-                        "difficulty": q["difficulty"],
-                        "correct": is_correct,
-                        "mode": "mock_exam"
-                    })
+                data["history"].append({
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "subject": subject,
+                    "topic": q["topic"],
+                    "difficulty": q["difficulty"],
+                    "correct": is_correct,
+                    "mode": "big_exam"
+                })
 
-                data["stats"]["questions_answered"] += total
-                data["stats"]["correct_answers"] += correct_count
-                data["stats"]["mock_exams_taken"] += 1
+            data["stats"]["questions_answered"] += total
+            data["stats"]["correct_answers"] += correct_count
+            data["stats"]["mock_exams_taken"] += 1
+            data["subject_progress"][subject] = min(100, data["subject_progress"].get(subject, 0) + max(5, correct_count * 2))
+            save_data(data)
 
-                progress = data["subject_progress"].get(subject, 0)
-                data["subject_progress"][subject] = min(100, progress + max(5, correct_count * 3))
-
-                if correct_count == total:
-                    award_achievement("🏆 درجة كاملة في اختبار تجريبي")
-
-                save_data(data)
-
-                score_percent = calc_percent(correct_count, total)
-                st.markdown(f"""
-                <div class="glass-card">
-                    <div class="subject-title">النتيجة النهائية</div>
-                    <div class="small-note">
-                        الدرجة: {correct_count} من {total}<br>
-                        النسبة: {score_percent}%<br>
-                        التقييم: {"ممتاز" if score_percent >= 85 else "جيد جدًا" if score_percent >= 70 else "يحتاج مراجعة"}
-                    </div>
+            score_percent = calc_percent(correct_count, total)
+            st.markdown(f"""
+            <div class="glass-card">
+                <div class="subject-title">النتيجة النهائية</div>
+                <div class="small-note">
+                    الدرجة: {correct_count} من {total}<br>
+                    النسبة: {score_percent}%<br>
+                    التقييم: {"ممتاز" if score_percent >= 85 else "جيد جدًا" if score_percent >= 70 else "يحتاج مراجعة"}
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
 
 # =========================================================
-# أكاديمية الفيديو
+# الفيديو
 # =========================================================
 elif page == "📺 أكاديمية الفيديو":
     st.markdown('<div class="section-title">أكاديمية الفيديو التعليمية</div>', unsafe_allow_html=True)
@@ -1158,9 +1021,8 @@ elif page == "📈 التحليلات":
     with c2:
         metric_card("الإجابات الخاطئة", str(wrong_q), "مجموع الأخطاء المسجلة")
     with c3:
-        metric_card("الدقة الكلية", f"{accuracy}%", performance_message())
+        metric_card("الدقة الكلية", f"{accuracy}%", "كلما ارتفعت الدقة زادت الجاهزية")
 
-    st.markdown("### 📘 نسب التقدم حسب المواد")
     progress_df = pd.DataFrame([
         {"المادة": subject, "نسبة التقدم": data["subject_progress"].get(subject, 0)}
         for subject in SUBJECTS.keys()
@@ -1178,71 +1040,9 @@ elif page == "📈 التحليلات":
             "mode": "الوضع"
         })
         history_df["النتيجة"] = history_df["النتيجة"].map({True: "صحيحة", False: "خاطئة"})
-        history_df["الوضع"] = history_df["الوضع"].map({
-            "single_question": "سؤال فردي",
-            "mock_exam": "اختبار تجريبي"
-        }).fillna(history_df["الوضع"])
-
-        st.markdown("### 🕒 سجل النشاط")
         st.dataframe(history_df.iloc[::-1], use_container_width=True, hide_index=True)
-
-        grouped = (
-            pd.DataFrame(data["history"])
-            .groupby("subject")["correct"]
-            .agg(["count", "sum"])
-            .reset_index()
-        )
-        grouped["accuracy"] = grouped.apply(
-            lambda row: calc_percent(int(row["sum"]), int(row["count"])),
-            axis=1
-        )
-        grouped.columns = ["المادة", "إجمالي الإجابات", "الإجابات الصحيحة", "نسبة الدقة"]
-        st.markdown("### 📊 ملخص حسب المادة")
-        st.dataframe(grouped, use_container_width=True, hide_index=True)
     else:
-        st.info("لا توجد بيانات كافية بعد. ابدأ بحل الأسئلة لتظهر التحليلات.")
-
-# =========================================================
-# الخطة اليومية
-# =========================================================
-elif page == "🎯 الخطة اليومية":
-    st.markdown('<div class="section-title">الخطة اليومية التنفيذية</div>', unsafe_allow_html=True)
-
-    acc = get_accuracy()
-    weakest = get_weakest_subject()
-
-    if acc >= 85:
-        plan = "أنت مؤهل اليوم لاختبار قوي ثم مراجعة مركزة للأخطاء النادرة."
-    elif acc >= 70:
-        plan = "أفضل تقسيم اليوم: مراجعة قصيرة + اختبار متوسط + تصحيح مباشر."
-    elif acc >= 50:
-        plan = "ركز اليوم على الأساسيات مع 5 أسئلة تدريبية فقط لكل مادة صعبة."
-    else:
-        plan = "خطة إنقاذ: ابدأ بالشرح ثم الأسئلة السهلة ثم التدرج."
-
-    tasks = [
-        today_task(),
-        f"ابدأ بالمادة الأضعف لديك: {weakest}.",
-        "حل اختبار سريع من 5 أسئلة.",
-        "فتح مذكرة PDF واحدة ومراجعتها 25 دقيقة.",
-        "مشاهدة فيديو واحد فقط وتلخيص أهم 3 نقاط.",
-        "إعادة سؤالين خاطئين سابقًا حتى تثبيت الفكرة."
-    ]
-
-    st.markdown(f"""
-    <div class="glass-card">
-        <div class="subject-title">📌 توصية ذكية</div>
-        <div class="small-note">{plan}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    for i, task in enumerate(tasks, start=1):
-        st.markdown(f"""
-        <div class="glass-card">
-            <span class="info-chip">المهمة {i}</span>
-            <div class="small-note">{task}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.info("لا توجد بيانات كافية بعد.")
 
 # =========================================================
 # الإعدادات
@@ -1252,59 +1052,26 @@ elif page == "⚙️ الإعدادات":
 
     student_name = st.text_input("اسم الطالب", value=data.get("student_name", "أدهم"))
     target_score = st.slider("الهدف النهائي", 50, 100, int(data.get("target_score", 95)))
-    theme_mode = st.selectbox("النمط البصري", ["إمبراطوري ليلي", "ذهبي رسمي", "أزرق ملكي"], index=0)
 
     if st.button("💾 حفظ الإعدادات"):
         data["student_name"] = student_name.strip() or "أدهم"
         data["target_score"] = target_score
-        data["theme"] = theme_mode
         data["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_data(data)
         st.success("تم حفظ الإعدادات بنجاح.")
 
-    st.markdown("### 🧹 أدوات النظام")
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("إعادة ضبط السجل والإحصاءات"):
-            current_name = data.get("student_name", "أدهم")
-            current_target = data.get("target_score", 95)
-            current_theme = data.get("theme", "إمبراطوري ليلي")
-
-            new_data = default_student_data()
-            new_data["student_name"] = current_name
-            new_data["target_score"] = current_target
-            new_data["theme"] = current_theme
-
-            save_data(new_data)
-            st.success("تمت إعادة ضبط السجل بنجاح. أعد تحميل الصفحة.")
-
-    with col2:
-        if st.button("مسح المفضلة فقط"):
-            data["favorites"] = []
-            save_data(data)
-            st.success("تم مسح المفضلة بنجاح.")
-
-    st.markdown("### ℹ️ معلومات تقنية")
-    st.markdown(f"""
-    <div class="glass-card">
-        <div class="small-note">
-            اسم التطبيق: {APP_TITLE}<br>
-            الإصدار: {APP_VERSION}<br>
-            مجلد الكتب: {SYLLABUS_DIR}<br>
-            ملف البيانات: {DATA_FILE}<br>
-            عدد المواد: {len(SUBJECTS)}<br>
-            عدد الأسئلة الكلي: {sum(len(v) for v in QUESTION_BANK.values())}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    if st.button("🧹 إعادة ضبط السجل"):
+        new_data = default_student_data()
+        new_data["student_name"] = data.get("student_name", "أدهم")
+        new_data["target_score"] = data.get("target_score", 95)
+        save_data(new_data)
+        st.success("تمت إعادة الضبط. أعد تحميل الصفحة.")
 
 # =========================================================
 # Footer
 # =========================================================
 st.markdown("""
 <div class="footer-note">
-    حصن أدهم التعليمي — إصدار فائق التطوير قابل للتوسع إلى:
-    حسابات متعددة، ولي أمر، مدرس، تقارير PDF، ذكاء اصطناعي، بنك أسئلة ضخم، ولوحات متابعة أكثر قوة.
+    حصن أدهم التعليمي — نسخة مطورة بمكتبة سحابية من Google Drive واختبارات مرنة ومفاتيح اختيارات أوضح بصريًا.
 </div>
 """, unsafe_allow_html=True)
