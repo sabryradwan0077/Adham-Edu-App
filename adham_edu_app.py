@@ -10,7 +10,7 @@ import streamlit as st
 
 # =========================================================
 # المنصة التعليمية - باقورة أعمال المهندس أدهم صبري
-# نسخة متكاملة: شرح + اختبارات + ملفات + فيديوهات يوتيوب + بحث ذكي
+# منصة متكاملة: شرح + ملفات + يوتيوب + بحث ذكي + اختبار احترافي
 # =========================================================
 
 APP_NAME = "المنصة التعليمية باقورة أعمال المهندس أدهم صبري"
@@ -24,11 +24,11 @@ st.set_page_config(
 )
 
 # =========================================================
-# هوية بصرية فاخرة جدًا
+# تنسيقات فائقة الفخامة
 # =========================================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900;1000&display=swap');
 
     html, body, [class*="css"] {
         direction: rtl;
@@ -38,14 +38,14 @@ st.markdown("""
 
     .stApp {
         background:
-            radial-gradient(circle at top right, rgba(31, 79, 168, 0.22), transparent 26%),
-            radial-gradient(circle at top left, rgba(214, 170, 54, 0.12), transparent 22%),
-            linear-gradient(180deg, #030814 0%, #071225 35%, #0a1831 70%, #08101f 100%);
+            radial-gradient(circle at top right, rgba(37, 99, 235, 0.22), transparent 24%),
+            radial-gradient(circle at top left, rgba(255, 215, 0, 0.10), transparent 18%),
+            linear-gradient(180deg, #020711 0%, #071225 35%, #0b1b35 70%, #07101f 100%);
         color: #f8fbff;
     }
 
     .block-container {
-        padding-top: 1.3rem;
+        padding-top: 1.2rem;
         padding-bottom: 2rem;
         max-width: 1450px;
     }
@@ -53,13 +53,13 @@ st.markdown("""
     .hero-shell {
         position: relative;
         overflow: hidden;
-        border-radius: 28px;
+        border-radius: 30px;
         padding: 34px 28px 28px 28px;
         background:
-            linear-gradient(135deg, rgba(10,25,53,0.92), rgba(5,14,31,0.96)),
-            radial-gradient(circle at 85% 20%, rgba(255,215,90,0.18), transparent 22%);
-        border: 1px solid rgba(255,255,255,0.09);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            linear-gradient(135deg, rgba(9, 21, 46, 0.96), rgba(5, 12, 28, 0.97)),
+            radial-gradient(circle at 85% 18%, rgba(255,215,90,0.16), transparent 22%);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 24px 65px rgba(0,0,0,0.35);
         margin-bottom: 22px;
     }
 
@@ -67,37 +67,36 @@ st.markdown("""
         content: "";
         position: absolute;
         inset: 0;
-        background:
-            linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.04) 20%, transparent 40%);
         pointer-events: none;
+        background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.04) 20%, transparent 40%);
     }
 
-    .brand-line {
+    .brand-pill {
         display: inline-block;
         padding: 8px 16px;
         border-radius: 999px;
         background: rgba(255, 215, 102, 0.10);
         border: 1px solid rgba(255, 215, 102, 0.24);
         color: #ffe8a3;
-        font-size: 0.95rem;
-        font-weight: 800;
+        font-size: 0.94rem;
+        font-weight: 900;
         margin-bottom: 14px;
     }
 
     .main-title {
-        font-size: 2.65rem;
-        font-weight: 900;
-        line-height: 1.45;
+        font-size: 2.6rem;
+        font-weight: 1000;
+        line-height: 1.5;
         color: #ffffff;
         text-align: center;
         margin-bottom: 8px;
-        text-shadow: 0 3px 25px rgba(108,151,255,0.18);
+        text-shadow: 0 4px 26px rgba(90, 156, 255, 0.20);
     }
 
     .sub-title {
         font-size: 1.08rem;
         text-align: center;
-        color: #d6e2f1;
+        color: #d8e3f0;
         line-height: 2;
         margin-bottom: 18px;
     }
@@ -106,7 +105,7 @@ st.markdown("""
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 14px;
-        margin-top: 12px;
+        margin-top: 14px;
     }
 
     .hero-stat {
@@ -115,20 +114,19 @@ st.markdown("""
         border-radius: 18px;
         padding: 16px;
         text-align: center;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
     }
 
     .hero-stat-value {
-        font-size: 1.55rem;
-        font-weight: 900;
+        font-size: 1.6rem;
+        font-weight: 1000;
         color: #ffffff;
         margin-bottom: 4px;
     }
 
     .hero-stat-label {
-        font-size: 0.96rem;
-        font-weight: 700;
-        color: #cbd7e6;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #d3dceb;
     }
 
     .section-shell {
@@ -137,26 +135,25 @@ st.markdown("""
         border-radius: 24px;
         padding: 22px;
         margin-bottom: 18px;
-        box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+        box-shadow: 0 14px 38px rgba(0,0,0,0.16);
     }
 
     .section-title {
-        font-size: 1.35rem;
-        font-weight: 900;
+        font-size: 1.4rem;
+        font-weight: 1000;
         color: #ffffff;
         margin-bottom: 8px;
     }
 
     .section-subtitle {
-        color: #d4ddeb;
+        color: #d7e0eb;
         font-size: 0.98rem;
         margin-bottom: 16px;
-        line-height: 1.9;
+        line-height: 1.95;
     }
 
     .lux-card {
-        background:
-            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.03));
+        background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.03));
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 20px;
         padding: 18px;
@@ -164,8 +161,7 @@ st.markdown("""
     }
 
     .lesson-card {
-        background:
-            linear-gradient(135deg, rgba(20,34,68,0.95), rgba(11,20,39,0.98));
+        background: linear-gradient(135deg, rgba(18,32,63,0.98), rgba(9,18,35,0.99));
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 22px;
         padding: 18px;
@@ -173,21 +169,48 @@ st.markdown("""
     }
 
     .lesson-title {
-        font-size: 1.14rem;
-        font-weight: 900;
+        font-size: 1.12rem;
+        font-weight: 1000;
         color: #ffffff;
         margin-bottom: 6px;
     }
 
     .lesson-meta {
-        color: #d2dbea;
+        color: #d5deea;
         font-size: 0.93rem;
         line-height: 1.9;
+        margin-bottom: 6px;
+    }
+
+    .small-note {
+        color: #cad7e6;
+        font-size: 0.95rem;
+        line-height: 1.95;
+    }
+
+    .youtube-card {
+        background: linear-gradient(135deg, rgba(66,13,24,0.9), rgba(28,9,14,0.95));
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 22px;
+        padding: 18px;
+        margin-bottom: 14px;
+    }
+
+    .yt-title {
+        font-size: 1.06rem;
+        font-weight: 1000;
+        color: #ffffff;
+        margin-bottom: 6px;
+    }
+
+    .yt-note {
+        color: #f0d8de;
+        font-size: 0.93rem;
+        line-height: 1.95;
     }
 
     .question-shell {
-        background:
-            linear-gradient(135deg, rgba(19,32,64,0.98), rgba(11,19,36,0.99));
+        background: linear-gradient(135deg, rgba(18,31,62,0.98), rgba(9,17,32,0.99));
         border: 1px solid rgba(255,255,255,0.09);
         border-radius: 24px;
         padding: 24px;
@@ -200,10 +223,10 @@ st.markdown("""
         display: inline-block;
         padding: 8px 15px;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(19,63,119,0.95), rgba(28,101,167,0.95));
+        background: linear-gradient(90deg, rgba(21,65,121,0.95), rgba(34,104,171,0.95));
         color: #ffffff;
         font-size: 0.95rem;
-        font-weight: 900;
+        font-weight: 1000;
         margin-bottom: 12px;
     }
 
@@ -215,15 +238,15 @@ st.markdown("""
         border-radius: 999px;
         background: rgba(110,168,254,0.13);
         color: #e2edff;
-        font-weight: 800;
+        font-weight: 900;
         font-size: 0.92rem;
         border: 1px solid rgba(110,168,254,0.20);
     }
 
     .question-text {
-        font-size: 1.48rem;
+        font-size: 1.5rem;
         line-height: 2.2;
-        font-weight: 900;
+        font-weight: 1000;
         color: #ffffff;
         margin-top: 8px;
         margin-bottom: 20px;
@@ -233,7 +256,7 @@ st.markdown("""
         padding: 15px 18px;
         border-radius: 18px;
         font-size: 1.22rem;
-        font-weight: 900;
+        font-weight: 1000;
         text-align: center;
         margin-bottom: 15px;
     }
@@ -262,7 +285,7 @@ st.markdown("""
         color: #ddffe8;
         padding: 18px;
         border-radius: 18px;
-        font-weight: 800;
+        font-weight: 900;
         margin-top: 14px;
         margin-bottom: 14px;
         line-height: 2;
@@ -274,38 +297,10 @@ st.markdown("""
         color: #ffe3dc;
         padding: 18px;
         border-radius: 18px;
-        font-weight: 800;
+        font-weight: 900;
         margin-top: 14px;
         margin-bottom: 14px;
         line-height: 2;
-    }
-
-    .youtube-card {
-        background:
-            linear-gradient(135deg, rgba(66,13,24,0.9), rgba(28,9,14,0.95));
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 22px;
-        padding: 18px;
-        margin-bottom: 14px;
-    }
-
-    .yt-title {
-        font-size: 1.06rem;
-        font-weight: 900;
-        color: #ffffff;
-        margin-bottom: 6px;
-    }
-
-    .yt-note {
-        color: #efd2d8;
-        font-size: 0.93rem;
-        line-height: 1.9;
-    }
-
-    .small-note {
-        color: #cad7e6;
-        font-size: 0.95rem;
-        line-height: 1.9;
     }
 
     .metric-card {
@@ -334,7 +329,7 @@ st.markdown("""
 
     div[data-baseweb="radio"] label div {
         font-size: 1.22rem !important;
-        font-weight: 900 !important;
+        font-weight: 1000 !important;
         color: #ffffff !important;
         line-height: 2 !important;
     }
@@ -344,8 +339,8 @@ st.markdown("""
         width: 100%;
         border-radius: 16px;
         font-size: 1rem;
-        font-weight: 900;
-        padding: 0.82rem 1rem;
+        font-weight: 1000;
+        padding: 0.84rem 1rem;
         border: 1px solid rgba(255,255,255,0.12);
         background: linear-gradient(135deg, #183866, #11294d);
         color: white;
@@ -356,10 +351,6 @@ st.markdown("""
     .stDownloadButton > button:hover {
         border-color: rgba(255,255,255,0.25);
         transform: translateY(-1px);
-    }
-
-    .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
-        border-radius: 14px !important;
     }
 
     .footer-note {
@@ -394,7 +385,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================
-# بيانات المنصة
+# أدوات مساعدة
 # =========================================================
 def make_question(subject: str, unit: str, difficulty: str, question: str,
                   options: List[str], answer: str, explanation: str,
@@ -452,14 +443,14 @@ def to_gdrive_download(url: str) -> str:
     return url
 
 # =========================================================
-# ملفات الشرح PDF
+# مصادر المنصة
 # =========================================================
 PDF_RESOURCES = [
     {
         "title": "ملف الفيزياء - الكهرباء والفيزياء الحديثة",
         "subject": "الفيزياء",
         "unit": "الكهرباء / الفيزياء الحديثة",
-        "keywords": ["فيزياء", "كهرباء", "قوانين كيرشوف", "حركة", "مغناطيسية", "ذرة"],
+        "keywords": ["فيزياء", "كهرباء", "قوانين كيرشوف", "مغناطيسية", "ذرة"],
         "drive_link": "https://drive.google.com/file/d/PUT_REAL_FILE_ID_1/view?usp=sharing"
     },
     {
@@ -485,10 +476,6 @@ PDF_RESOURCES = [
     },
 ]
 
-# =========================================================
-# روابط يوتيوب
-# ضع الروابط الحقيقية مكان الروابط التجريبية
-# =========================================================
 YOUTUBE_RESOURCES = [
     {
         "title": "شرح الفيزياء - الباب الأول",
@@ -520,37 +507,34 @@ YOUTUBE_RESOURCES = [
         "unit": "النحو / البلاغة",
         "keywords": ["عربي", "نحو", "بلاغة", "أساليب"],
         "youtube_url": "https://www.youtube.com/watch?v=PUT_REAL_VIDEO_ID_4",
-        "description": "شرح مبسط واحترافي يساعد الطالب على الفهم السريع والتثبيت."
+        "description": "شرح مبسط واحترافي يساعد على الفهم السريع والتثبيت."
     },
 ]
 
-# =========================================================
-# محتوى الشرح داخل المنصة
-# =========================================================
 LESSON_SUMMARIES = [
     {
         "subject": "الفيزياء",
         "title": "مدخل إلى الكهرباء والدوائر الكهربية",
         "unit": "التيار - فرق الجهد - المقاومة - قانون أوم",
-        "summary": "في هذا الدرس يتعرف الطالب إلى المفاهيم الأساسية للكهرباء، والعلاقة بين التيار وفرق الجهد والمقاومة، وطريقة حل المسائل الأساسية بصورة منظمة تمهيدًا لباقي الأبواب."
+        "summary": "في هذا الدرس يتعرف الطالب إلى المفاهيم الأساسية للكهرباء والعلاقة بين التيار وفرق الجهد والمقاومة وطريقة حل المسائل الأساسية بصورة منظمة تمهيدًا لباقي الأبواب."
     },
     {
         "subject": "الرياضيات",
         "title": "التفاضل والتكامل بطريقة امتحانية",
         "unit": "المشتقات - التطبيقات - التكامل",
-        "summary": "يتناول هذا الدرس قواعد الاشتقاق والتطبيقات المباشرة عليها، ثم ينتقل إلى التكامل والصيغ الأساسية وأهم الأفكار التي تظهر في الامتحانات الرسمية."
+        "summary": "يتناول هذا الدرس قواعد الاشتقاق والتطبيقات المباشرة عليها ثم ينتقل إلى التكامل والصيغ الأساسية وأهم الأفكار التي تظهر في الامتحانات الرسمية."
     },
     {
         "subject": "الكيمياء",
         "title": "التركيب الذري والروابط الكيميائية",
         "unit": "الذرة - الجدول الدوري - الروابط",
-        "summary": "يشرح هذا المحور البناء الذري، وتوزيع الإلكترونات، وعلاقة ذلك بتدرج الخواص الكيميائية وتكوين الروابط الأيونية والتساهمية."
+        "summary": "يشرح هذا المحور البناء الذري وتوزيع الإلكترونات وعلاقة ذلك بتدرج الخواص الكيميائية وتكوين الروابط الأيونية والتساهمية."
     },
     {
         "subject": "اللغة العربية",
         "title": "مدخل احترافي إلى النحو والبلاغة",
         "unit": "الفاعل - اسم إن - الاستعارة - التشبيه",
-        "summary": "يركز هذا الدرس على القواعد التي يكثر ورودها في الامتحانات، مع تدريب الطالب على الفهم الدقيق للإعراب والتمييز بين الأساليب والصور البلاغية."
+        "summary": "يركز هذا الدرس على القواعد التي يكثر ورودها في الامتحانات مع تدريب الطالب على الفهم الدقيق للإعراب والتمييز بين الأساليب والصور البلاغية."
     },
 ]
 
@@ -577,7 +561,7 @@ def get_questions() -> List[Dict[str, Any]]:
                       "ينص قانون كيرشوف الأول على أن المجموع الجبري للتيارات عند نقطة التقاء يساوي:",
                       ["أ) المقاومة", "ب) الجهد", "ج) صفر", "د) مالا نهاية"],
                       "ج",
-                      "مجموع التيارات الداخلة إلى العقدة يساوي مجموع التيارات الخارجة منها، ولذلك يكون المجموع الجبري صفراً.",
+                      "مجموع التيارات الداخلة إلى العقدة يساوي مجموع التيارات الخارجة منها ولذلك يكون المجموع الجبري صفراً.",
                       55),
 
         make_question("الفيزياء", "القدرة الكهربية", "متوسط",
@@ -591,14 +575,14 @@ def get_questions() -> List[Dict[str, Any]]:
                       "إذا تضاعفت مساحة لوحي مكثف مستوٍ مع ثبات المسافة بينهما، فإن السعة الكهربية:",
                       ["أ) تقل للنصف", "ب) تظل ثابتة", "ج) تتضاعف", "د) تصبح أربعة أمثال"],
                       "ج",
-                      "السعة تتناسب طرديًا مع المساحة وعكسيًا مع المسافة، لذا مع ثبات المسافة وتضاعف المساحة تتضاعف السعة.",
+                      "السعة تتناسب طرديًا مع المساحة وعكسيًا مع المسافة لذا مع ثبات المسافة وتضاعف المساحة تتضاعف السعة.",
                       65),
 
         make_question("الرياضيات", "التفاضل", "سهل",
                       "ما مشتقة الدالة س = x² ؟",
                       ["أ) x", "ب) 2x", "ج) x³", "د) 2"],
                       "ب",
-                      "باستخدام قاعدة القوة، مشتقة x² تساوي 2x.",
+                      "باستخدام قاعدة القوة مشتقة x² تساوي 2x.",
                       40),
 
         make_question("الرياضيات", "التكامل", "سهل",
@@ -619,7 +603,7 @@ def get_questions() -> List[Dict[str, Any]]:
                       "إذا ألقي حجر نرد منتظم مرة واحدة، فما احتمال ظهور عدد أولي؟",
                       ["أ) 1/6", "ب) 1/3", "ج) 1/2", "د) 2/3"],
                       "ج",
-                      "الأعداد الأولية على حجر النرد هي 2 و3 و5، أي 3 نواتج من 6، فيكون الاحتمال 1/2.",
+                      "الأعداد الأولية على حجر النرد هي 2 و3 و5 أي 3 نواتج من 6، فيكون الاحتمال 1/2.",
                       50),
 
         make_question("الرياضيات", "التكامل بالتجزئة", "صعب",
@@ -640,7 +624,7 @@ def get_questions() -> List[Dict[str, Any]]:
                       "العناصر الموجودة في نفس المجموعة في الجدول الدوري تتشابه في:",
                       ["أ) الكتلة الذرية فقط", "ب) عدد النيوترونات", "ج) الخواص الكيميائية", "د) الحالة الفيزيائية فقط"],
                       "ج",
-                      "عناصر المجموعة الواحدة تتشابه في عدد إلكترونات التكافؤ تقريبًا، لذلك تتقارب في الخواص الكيميائية.",
+                      "عناصر المجموعة الواحدة تتشابه في عدد إلكترونات التكافؤ تقريبًا لذلك تتقارب في الخواص الكيميائية.",
                       45),
 
         make_question("الكيمياء", "الأحماض والقواعد", "متوسط",
@@ -661,21 +645,21 @@ def get_questions() -> List[Dict[str, Any]]:
                       "يعمل العامل الحفاز على زيادة سرعة التفاعل لأنه:",
                       ["أ) يزيد طاقة التنشيط", "ب) يقلل طاقة التنشيط", "ج) يغير النواتج", "د) يغيّر الاتزان فقط"],
                       "ب",
-                      "العامل الحفاز يوفر مسارًا بديلًا بطاقة تنشيط أقل، فيزداد معدل التفاعل.",
+                      "العامل الحفاز يوفر مسارًا بديلًا بطاقة تنشيط أقل فيزداد معدل التفاعل.",
                       65),
 
         make_question("اللغة العربية", "النحو", "سهل",
                       "اختر الجملة الصحيحة من حيث رفع الفاعل:",
                       ["أ) حضرَ الطالبُ", "ب) حضرَ الطالبَ", "ج) حضرَ الطالبِ", "د) حضرَ الطالبْ"],
                       "أ",
-                      "الفاعل يجب أن يكون مرفوعًا، ولذلك تكون الصورة الصحيحة: الطالبُ.",
+                      "الفاعل يجب أن يكون مرفوعًا ولذلك تكون الصورة الصحيحة: الطالبُ.",
                       45),
 
         make_question("اللغة العربية", "النحو", "متوسط",
                       "في الجملة: إن العلمَ نورٌ، كلمة العلمَ تعرب:",
                       ["أ) خبر إن", "ب) اسم إن", "ج) فاعل", "د) مفعول به"],
                       "ب",
-                      "بعد إن يأتي اسمها منصوبًا، ولذلك تعرب كلمة العلمَ: اسم إن منصوب.",
+                      "بعد إن يأتي اسمها منصوبًا ولذلك تعرب كلمة العلمَ: اسم إن منصوب.",
                       55),
 
         make_question("اللغة العربية", "البلاغة", "متوسط",
@@ -757,7 +741,7 @@ def run_search(query: str,
     }
 
 # =========================================================
-# حالة الجلسة
+# إدارة الحالة
 # =========================================================
 def init_state():
     if "questions" not in st.session_state:
@@ -878,14 +862,14 @@ questions = st.session_state.questions
 # =========================================================
 # رأس المنصة
 # =========================================================
-st.markdown("""
+st.markdown(f"""
 <div class="hero-shell">
     <div style="text-align:center;">
-        <div class="brand-line">إبداع تقني • فخامة بصرية • تجربة تعليمية متكاملة</div>
-        <div class="main-title">المنصة التعليمية باقورة أعمال المهندس أدهم صبري</div>
+        <div class="brand-pill">إبداع تقني • فخامة بصرية • تجربة تعليمية متكاملة</div>
+        <div class="main-title">{APP_NAME}</div>
         <div class="sub-title">
-            منصة تعليمية متكاملة تجمع بين الشرح المنظم، والبحث الذكي، والاختبارات الاحترافية، وروابط ملفات الدراسة،
-            وفيديوهات يوتيوب التعليمية في واجهة ملكية مصممة لتبهر الطالب من أول نظرة وحتى آخر نتيجة.
+            منصة تعليمية متكاملة تجمع بين الشرح المنظم، والبحث الذكي، والاختبارات الاحترافية،
+            وروابط ملفات الدراسة، وفيديوهات يوتيوب التعليمية في واجهة ملكية مصممة لتبهر الطالب من أول نظرة وحتى آخر نتيجة.
         </div>
     </div>
 </div>
@@ -1030,28 +1014,16 @@ if page == "الواجهة الرئيسية":
     with col1:
         st.markdown("#### ماذا تقدم المنصة؟")
         st.markdown("""
-        <div class="lux-card">
-            شرح مبسط ومنظم داخل نفس الواجهة، مع تقسيم المحتوى حسب المواد والوحدات، وإتاحة الوصول السريع للمعلومة من خلال البحث الذكي.
-        </div>
-        <div class="lux-card">
-            ربط مباشر بملفات PDF وروابط Google Drive حتى يصبح الطالب قادرًا على الانتقال من الفهم إلى المراجعة دون تشتيت.
-        </div>
-        <div class="lux-card">
-            مكتبة فيديوهات يوتيوب تعليمية تساعد على تثبيت الفهم وتوسيع الشرح من خلال المصادر المرئية.
-        </div>
+        <div class="lux-card">شرح مبسط ومنظم داخل نفس الواجهة، مع تقسيم المحتوى حسب المواد والوحدات، وإتاحة الوصول السريع للمعلومة من خلال البحث الذكي.</div>
+        <div class="lux-card">ربط مباشر بملفات PDF وروابط Google Drive حتى يصبح الطالب قادرًا على الانتقال من الفهم إلى المراجعة دون تشتيت.</div>
+        <div class="lux-card">مكتبة فيديوهات يوتيوب تعليمية تساعد على تثبيت الفهم وتوسيع الشرح من خلال المصادر المرئية.</div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown("#### لماذا هذه الواجهة مختلفة؟")
         st.markdown("""
-        <div class="lux-card">
-            تم تصميم التجربة البصرية لتشعر الطالب أنه داخل منصة فاخرة لا داخل نموذج تقليدي، مع توازن بين الجمال والوضوح وسهولة الاستخدام.
-        </div>
-        <div class="lux-card">
-            الألوان والخطوط والبطاقات والمؤشرات الزمنية كلها مصممة بحيث تعطي إحساسًا بالرقي والثقة والاحتراف.
-        </div>
-        <div class="lux-card">
-            المنصة قابلة للتطوير بسهولة بإضافة مواد ووحدات جديدة وروابط أكثر وبنوك أسئلة أضخم.
-        </div>
+        <div class="lux-card">تم تصميم التجربة البصرية لتشعر الطالب أنه داخل منصة فاخرة لا داخل نموذج تقليدي، مع توازن بين الجمال والوضوح وسهولة الاستخدام.</div>
+        <div class="lux-card">الألوان والخطوط والبطاقات والمؤشرات الزمنية كلها مصممة بحيث تعطي إحساسًا بالرقي والثقة والاحتراف.</div>
+        <div class="lux-card">المنصة قابلة للتطوير بسهولة بإضافة مواد ووحدات جديدة وروابط أكثر وبنوك أسئلة أضخم.</div>
         """, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -1148,8 +1120,8 @@ elif page == "مكتبة يوتيوب":
     """, unsafe_allow_html=True)
 
     st.link_button("فتح الفيديو على يوتيوب", video_item["youtube_url"])
-
     st.video(video_item["youtube_url"])
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================
@@ -1161,8 +1133,7 @@ elif page == "الاختبار الذكي":
         st.markdown('<div class="section-title">الاختبار الذكي المتسلسل</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="section-subtitle">
-            هذا القسم يعمل بمنطق احترافي:
-            سؤال واحد فقط في كل مرة، ولا يظهر زر السؤال التالي إلا بعد إرسال الإجابة،
+            هذا القسم يعمل بمنطق احترافي: سؤال واحد فقط في كل مرة، ولا يظهر زر السؤال التالي إلا بعد إرسال الإجابة،
             ولكل سؤال زمن خاص به، وإذا انتهى الوقت يتم الانتقال تلقائيًا للسؤال التالي.
         </div>
         """, unsafe_allow_html=True)
@@ -1172,6 +1143,7 @@ elif page == "الاختبار الذكي":
             st.rerun()
 
         st.markdown('</div>', unsafe_allow_html=True)
+
     else:
         if st.session_state.exam_finished:
             st.markdown('<div class="section-shell">', unsafe_allow_html=True)
@@ -1180,6 +1152,7 @@ elif page == "الاختبار الذكي":
             if st.button("إعادة الاختبار من البداية"):
                 reset_exam()
             st.markdown('</div>', unsafe_allow_html=True)
+
         else:
             ensure_timer_for_current_question()
 
@@ -1325,7 +1298,7 @@ elif page == "الاختبار الذكي":
 elif page == "لوحة النتائج":
     st.markdown('<div class="section-shell">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">لوحة النتائج والتقارير</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subtitle">تقرير تفصيلي يوضح أداء الطالب في الاختبار، مع إمكانية تحميل النتائج في ملف CSV.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">تقرير تفصيلي يوضح أداء الطالب في الاختبار مع إمكانية تحميل النتائج في ملف CSV.</div>', unsafe_allow_html=True)
 
     total = len(st.session_state.questions)
     all_answers = st.session_state.answers
@@ -1336,13 +1309,13 @@ elif page == "لوحة النتائج":
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:900;">{total}</div><div>إجمالي الأسئلة</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:1000;">{total}</div><div>إجمالي الأسئلة</div></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:900;">{correct}</div><div>الإجابات الصحيحة</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:1000;">{correct}</div><div>الإجابات الصحيحة</div></div>', unsafe_allow_html=True)
     with c3:
-        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:900;">{incorrect}</div><div>الإجابات الخاطئة</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:1000;">{incorrect}</div><div>الإجابات الخاطئة</div></div>', unsafe_allow_html=True)
     with c4:
-        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:900;">{timed_out}</div><div>تخطي تلقائي</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card"><div style="font-size:1.8rem;font-weight:1000;">{timed_out}</div><div>تخطي تلقائي</div></div>', unsafe_allow_html=True)
 
     st.progress(score_percent / 100)
     st.success(f"النسبة النهائية: {score_percent}%")
@@ -1374,11 +1347,11 @@ elif page == "لوحة النتائج":
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================
-# تذييل
+# التذييل
 # =========================================================
 st.markdown("""
 <div class="footer-note">
-    هذه النسخة مصممة لتكون واجهة تعليمية فاخرة ومتكاملة وقابلة للتطوير.
-    للحصول على التشغيل الفعلي الكامل، استبدل روابط Google Drive وروابط YouTube التجريبية بروابطك الحقيقية داخل الكود.
+    هذه النسخة مصممة لتكون منصة تعليمية فاخرة ومتكاملة وقابلة للتطوير.
+    لتفعيل التشغيل الفعلي الكامل، استبدل روابط Google Drive وروابط YouTube التجريبية بروابطك الحقيقية داخل الكود.
 </div>
 """, unsafe_allow_html=True)
